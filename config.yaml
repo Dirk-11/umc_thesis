@@ -1,0 +1,227 @@
+# =============================================================================
+# Kidney stone composition classifier — central configuration
+# =============================================================================
+# All tunable parameters live here. Every script reads from this file, so
+# changing anything here propagates through the whole pipeline.
+# =============================================================================
+
+project:
+  name: "kidney_stone_classifier"
+  root: "."   # "." = directory containing this config.yaml — works on any machine
+  seed: 42
+
+paths:
+  excel_file: "data/data/Data_MOCKI_analyse_per_foto.xlsx"
+  images_dir: "data/images"
+  outputs_dir: "outputs"
+  figures_dir: "outputs/figures"
+  checkpoints_dir: "outputs/checkpoints"
+  checkpoints_moe_dir: "outputs/checkpoints_moe"
+  logs_dir: "outputs/logs"
+  processed_csv: "data/processed/stones_labeled.csv"
+  processed_images_csv: "data/processed/images_labeled.csv"
+
+# -----------------------------------------------------------------------------
+# Data preparation
+# -----------------------------------------------------------------------------
+data:
+  # Purity threshold: stones with primary_pct >= this value are labeled "pure".
+  # Default 90% (following Kim 2022). Lower values = more stones labeled pure.
+  purity_threshold: 100
+
+  # Stones to exclude entirely (no valid composition labels)
+  exclude_stones:
+    - "S168"  # marked as TWM, no composition
+    - "S301"  # no composition data
+
+  # Known data-entry errors in the Excel (column-swap errors and typos).
+  # Applied after loading the Excel so the pipeline is fully reproducible.
+  percentage_corrections:
+    S242: {primary_pct: 90.0}
+    S243: {primary_pct: 90.0}
+    S244: {primary_pct: 90.0}
+    S14:  {secondary_pct: 30.0}
+    S44:  {tertiary_pct: 10.0}
+    S32:  {secondary_pct: 10.0, tertiary_pct: 10.0}
+
+  # How many photos per stone (used as a sanity check)
+  expected_images_per_stone: 3
+
+  # Image file extension (as seen in data/images folder)
+  image_extension: ".JPG"
+
+# -----------------------------------------------------------------------------
+# Class remapping — two-stage
+# -----------------------------------------------------------------------------
+# Final target classes (6): CaOx, CHP, UA, MAP, CYS, OTH
+#
+# Two stages, applied in order:
+#   1. OTH subtype remapping: when a component is "OTH", check the FTIR
+#      sub-identification in the Excel's `oth_detail` column. Normalize
+#      spelling variants, then remap to a final class if chemically valid.
+#      Anything not matched stays as "OTH".
+#   2. Standard class merging: collapse finer subtypes into the 6 target
+#      classes (e.g. COM + COD → CaOx).
+#
+# Final class counts (at 90% purity threshold):
+#   CaOx (COM+COD):        128 stones
+#   CHP  (CHP+CHPD+CMP):    93 stones
+#   UA   (+urate salts):    33 stones
+#   CYS:                    32 stones
+#   MAP  (+Newberyite):      9 stones
+#   OTH  (calcite/protein/xanthine): 4 stones
+# -----------------------------------------------------------------------------
+class_remapping:
+  # Whether to apply the full remapping. Set to false for a "raw" run using
+  # the original 9 Excel component labels (COM, COD, CHP, CHPD, CMP, UA,
+  # MAP, CYS, OTH).
+  enabled: true
+
+  # ---- Stage 1: OTH subtype remapping ----
+  # Spelling variants in the Excel `oth_detail` column → normalized name
+  oth_spelling_normalization:
+    "Natriumhydrogeenuraathydraat": "Na-H-urate hydrate"
+    "Natriumhydrogenuraathydraat": "Na-H-urate hydrate"
+    "Natriumhydrogenurat-hydrat": "Na-H-urate hydrate"
+    "Calcit": "Calcite"
+    "Monoammoniumuraat": "Monoammonium urate"
+    "Proteine": "Protein"
+    "Protein": "Protein"
+    "Proteinmischung": "Protein"
+    "Humaanalbumine": "Protein"
+    "Humanalbumin": "Protein"
+    "Xanthin": "Xanthine"
+    "Xanthine": "Xanthine"
+    "Xantine": "Xanthine"
+    "Ca(6X)MG(X)(PO4)4": "Ca-Mg phosphate"
+    "Newberyit": "Newberyite"
+    "Harnsauere dihydrat": "Uric acid dihydrate"
+    "Harnsauere diydraat": "Uric acid dihydrate"
+
+  # Normalized OTH subtype → final class.
+  # Anything not listed stays as "OTH".
+  oth_to_final_class:
+    "Na-H-urate hydrate": "UA"      # 16 stones, urate salt
+    "Monoammonium urate": "UA"      #  7 stones, urate salt
+    "Uric acid dihydrate": "UA"     #  2 stones, UA variant
+    "Ca-Mg phosphate": "CHP"        #  3 stones, phosphate variant
+    "Newberyite": "MAP"             #  1 stone,  Mg phosphate
+    # Calcite (9), Protein (10), Xanthine (5) stay as "OTH" by default
+
+  # ---- Stage 2: standard component → final class ----
+  # After stage 1, every component is one of the 9 originals OR already a
+  # final class (from OTH remapping). This stage collapses the originals.
+  component_to_final_class:
+    "COM": "CaOx"
+    "COD": "CaOx"
+    "CHP": "CHP"
+    "CHPD": "CHP"
+    "CMP": "CHP"
+    "UA": "UA"
+    "MAP": "MAP"
+    "CYS": "CYS"
+    # "OTH" stays as "OTH"
+
+  # The full list of final classes the model will see
+  final_classes:
+    - "CaOx"
+    - "CHP"
+    - "UA"
+    - "MAP"
+    - "CYS"
+    - "OTH"
+
+# -----------------------------------------------------------------------------
+# Cross-validation splits
+# -----------------------------------------------------------------------------
+# Splits are done at STONE level (not image level) to prevent data leakage
+# between the 3 photos of the same stone.
+# -----------------------------------------------------------------------------
+cv:
+  n_folds: 5
+  stratify_on: "label"   # "label" (pure/mixed) or "primary_component"
+  shuffle: true
+  test_fraction: 0.15    # fraction of stones held out as a final test set
+
+# -----------------------------------------------------------------------------
+# Model
+# -----------------------------------------------------------------------------
+model:
+  # Backbone architecture. Options (via torchvision):
+  # resnet50, resnet101, efficientnet_b0, densenet121
+  backbone: "resnet50"
+  pretrained_weights: "IMAGENET1K_V2"   # best available for ResNet50
+  num_classes: 2                         # pure vs mixed
+  dropout: 0.3
+
+# -----------------------------------------------------------------------------
+# Training
+# -----------------------------------------------------------------------------
+training:
+  device: "mps"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
+  batch_size: 32
+  num_workers: 4
+  epochs_frozen: 5         # train only the head with frozen backbone
+  epochs_finetune: 20      # then fine-tune backbone too
+  learning_rate_head: 0.001
+  learning_rate_backbone: 0.0001
+  weight_decay: 0.0001
+  early_stopping_patience: 5
+
+# -----------------------------------------------------------------------------
+# Image preprocessing & augmentation
+# -----------------------------------------------------------------------------
+image:
+  input_size: 224          # ResNet50 input
+  # ImageNet normalization stats (ResNet50 was pretrained on these)
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+augmentation:
+  horizontal_flip_p: 0.5
+  vertical_flip_p: 0.5
+  rotation_degrees: 15
+  color_jitter_brightness: 0.2
+  color_jitter_contrast: 0.2
+  color_jitter_saturation: 0.1
+
+# -----------------------------------------------------------------------------
+# Evaluation
+# -----------------------------------------------------------------------------
+evaluation:
+  # Aggregate per-stone predictions by averaging/voting across the 3 photos
+  stone_level_aggregation: "mean_probability"   # or "majority_vote"
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1"
+    - "roc_auc"
+    - "confusion_matrix"
+
+# -----------------------------------------------------------------------------
+# Model B — Mixture-of-Experts compositional regression
+# -----------------------------------------------------------------------------
+model_moe:
+  backbone: "resnet50"
+  pretrained_weights: "IMAGENET1K_V2"
+  head_hidden_dim: 128
+  head_dropout: 0.3
+  # Optional: path to a Model A fold checkpoint to warm-start the backbone.
+  # e.g. "outputs/checkpoints/fold_0/best.pt". null = use ImageNet weights only.
+  warm_start_from: null
+
+training_moe:
+  device: "mps"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
+  batch_size: 32
+  num_workers: 4
+  epochs_frozen: 5        # train only the heads with frozen backbone
+  epochs_finetune: 25     # then fine-tune backbone too
+  learning_rate_head: 0.001
+  learning_rate_backbone: 0.0001
+  weight_decay: 0.0001
+  early_stopping_patience: 7
+  loss: "kl"              # "kl" (KL divergence), "l1", or "mse"
+
+evaluation_moe:
+  stone_level_aggregation: "mean_composition"

@@ -1,0 +1,22 @@
+name: kidney-stone
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pytorch
+  - torchvision
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - pyyaml
+  - openpyxl
+  - jupyter
+  - ipykernel
+  - tqdm
+  - pillow
+  - pip:
+    - grad-cam

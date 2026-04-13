@@ -1,0 +1,30 @@
+# Data (usually not committed — too large, privacy-sensitive)
+data/images/
+data/processed/
+
+# Outputs
+outputs/checkpoints/
+outputs/logs/
+outputs/figures/*.png
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
