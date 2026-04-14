@@ -11,6 +11,7 @@ Across all folds:
   - Cross-fold mean ± std table (CSV + console)
   - Per-class MAE bar chart
   - Predicted vs true composition scatter plots (stone-level)
+  - Primary-component confusion matrix (argmax of predicted vs true)
   - Per-stone predictions CSV
 
 Also evaluates the held-out test set (same split as training).
@@ -18,7 +19,9 @@ Also evaluates the held-out test set (same split as training).
 Outputs (all under outputs/):
   figures/moe_mae_bars.png
   figures/moe_composition_scatter.png
+  figures/moe_primary_confusion.png
   figures/moe_mae_bars_test.png
+  figures/moe_primary_confusion_test.png
   logs/eval_moe_fold_summaries.csv
   logs/eval_moe_cv_summary.csv
   logs/eval_moe_stone_predictions.csv
@@ -257,6 +260,66 @@ def plot_composition_scatter(
     log.info(f"Saved: {output_path}")
 
 
+def plot_primary_confusion(
+    stone_df: pd.DataFrame,
+    class_names: list[str],
+    output_path: Path,
+    title: str = "Primary component — predicted vs true (stone level)",
+) -> None:
+    """Confusion matrix where each cell is argmax(predicted) vs argmax(true).
+
+    Rows = true primary component, columns = predicted primary component.
+    Both raw counts and row-normalised accuracy are shown.
+    """
+    from sklearn.metrics import confusion_matrix
+
+    pred_cols = [f"pred_{c}" for c in class_names]
+    true_cols = [f"true_{c}" for c in class_names]
+
+    pred_primary = np.array(class_names)[stone_df[pred_cols].values.argmax(axis=1)]
+    true_primary = np.array(class_names)[stone_df[true_cols].values.argmax(axis=1)]
+
+    cm = confusion_matrix(true_primary, pred_primary, labels=class_names)
+    # Row-normalise (true counts may be zero for some classes)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        cm_norm = np.where(cm.sum(axis=1, keepdims=True) > 0,
+                           cm / cm.sum(axis=1, keepdims=True), 0.0)
+
+    overall_acc = float((pred_primary == true_primary).mean())
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for ax, data, fmt, subtitle in zip(
+        axes,
+        [cm, cm_norm],
+        ["d", ".2f"],
+        ["Raw counts", "Row-normalised (recall per class)"],
+    ):
+        im = ax.imshow(data, cmap="Blues", vmin=0, vmax=data.max())
+        ax.set_xticks(range(len(class_names)))
+        ax.set_yticks(range(len(class_names)))
+        ax.set_xticklabels(class_names, rotation=45, ha="right", fontsize=10)
+        ax.set_yticklabels(class_names, fontsize=10)
+        ax.set_xlabel("Predicted primary", fontsize=11)
+        ax.set_ylabel("True primary", fontsize=11)
+        ax.set_title(subtitle, fontsize=11)
+        for r in range(len(class_names)):
+            for c in range(len(class_names)):
+                val = data[r, c]
+                text = format(int(val), fmt) if fmt == "d" else format(val, fmt)
+                ax.text(c, r, text, ha="center", va="center",
+                        color="white" if val > data.max() * 0.6 else "black",
+                        fontsize=9)
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    fig.suptitle(f"{title}\nOverall primary-component accuracy = {overall_acc:.3f}",
+                 fontsize=12)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    log.info(f"Saved: {output_path}")
+    log.info(f"  Primary-component accuracy: {overall_acc:.3f}")
+
+
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
@@ -352,6 +415,8 @@ def main() -> None:
                       figures_dir / "moe_mae_bars.png")
     plot_composition_scatter(all_stones, final_classes,
                              figures_dir / "moe_composition_scatter.png")
+    plot_primary_confusion(all_stones, final_classes,
+                           figures_dir / "moe_primary_confusion.png")
 
     # -------------------------------------------------------------------------
     # Held-out test set evaluation
@@ -407,6 +472,9 @@ def main() -> None:
         plot_composition_scatter(test_agg, final_classes,
                                  figures_dir / "moe_composition_scatter_test.png",
                                  title="Predicted vs true composition — held-out test set")
+        plot_primary_confusion(test_agg, final_classes,
+                               figures_dir / "moe_primary_confusion_test.png",
+                               title="Primary component — predicted vs true (held-out test set)")
 
     log.info("MoE evaluation complete.")
 
