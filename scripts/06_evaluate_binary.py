@@ -228,7 +228,7 @@ def evaluate_fold(
 
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
 
-    model_module = import_module("04_model")
+    model_module = import_module("04_model_binary")
     model = model_module.build_model(cfg).to(device)
     model.load_state_dict(checkpoint["model_state"])
     log.info(
@@ -389,7 +389,7 @@ def main() -> None:
     # are averaged to give the final unbiased performance estimate.
     # -------------------------------------------------------------------------
     log.info("=== Held-out test set evaluation ===")
-    model_module = import_module("04_model")
+    model_module = import_module("04_model_binary")
     test_metrics_all: list[dict] = []
     test_stone_dfs:   list[pd.DataFrame] = []
     test_roc: list[tuple[np.ndarray, np.ndarray, float]] = []

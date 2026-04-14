@@ -348,7 +348,7 @@ def main() -> None:
         log.error(f"No checkpoint at {ckpt_path}. Run 05_train.py first.")
         sys.exit(1)
 
-    model_module = import_module("04_model")
+    model_module = import_module("04_model_binary")
     model = model_module.build_model(cfg).to(device)
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model_state"])

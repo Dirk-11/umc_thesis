@@ -153,7 +153,7 @@ def evaluate_fold_moe(
 
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
 
-    model_module = import_module("04_model_moe")
+    model_module = import_module("04_model_composition")
     model = model_module.build_moe_model(cfg).to(device)
     model.load_state_dict(checkpoint["model_state"])
     log.info(

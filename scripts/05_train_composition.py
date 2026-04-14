@@ -253,7 +253,7 @@ def train_one_fold_moe(
     ensure_dir(fold_dir)
 
     ds_module   = import_module("03_dataset")
-    model_module = import_module("04_model_moe")
+    model_module = import_module("04_model_composition")
 
     train_loader = ds_module.make_compositional_dataloader(samples, train_idx, cfg, train=True)
     val_loader   = ds_module.make_compositional_dataloader(samples, val_idx,   cfg, train=False)
@@ -448,7 +448,7 @@ def main() -> None:
     # Held-out test set evaluation
     # -------------------------------------------------------------------------
     log.info("=== Held-out test set evaluation ===")
-    model_module = import_module("04_model_moe")
+    model_module = import_module("04_model_composition")
     criterion    = make_criterion(cfg["training_moe"]["loss"])
     aggregation  = cfg["evaluation_moe"]["stone_level_aggregation"]
     test_loader  = ds_module.make_compositional_dataloader(

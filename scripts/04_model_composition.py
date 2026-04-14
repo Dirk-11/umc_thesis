@@ -1,8 +1,8 @@
 """
-04_model_moe.py — Mixture-of-Experts model for compositional regression (Model B).
+04_model_composition.py — Multi-head compositional regression model (Model B).
 
 Architecture:
-  - Shared ResNet50 backbone (same structure as Model A in 04_model.py)
+  - Shared ResNet50 backbone (same structure as Model A in 04_model_binary.py)
   - N parallel expert heads, one per final class (CaOx, CHP, UA, MAP, CYS, OTH)
   - Each head: Linear(feat_dim, hidden_dim) → ReLU → Dropout → Linear(hidden_dim, 1)
   - Forward pass returns raw logits (shape: batch × n_classes)
@@ -18,7 +18,7 @@ Usage:
   model.unfreeze_backbone()   # full fine-tuning (Phase 2)
 
 Run as script to verify model builds and forward-pass is valid:
-  python scripts/04_model_moe.py
+  python scripts/04_model_composition.py
 """
 from __future__ import annotations
 
@@ -36,11 +36,11 @@ log = setup_logging("model_moe")
 
 
 # -----------------------------------------------------------------------------
-# Backbone — reuse builders from 04_model.py
+# Backbone — reuse builders from 04_model_binary.py
 # -----------------------------------------------------------------------------
 def _get_backbones():
     from importlib import import_module
-    return import_module("04_model").BACKBONES
+    return import_module("04_model_binary").BACKBONES
 
 
 # -----------------------------------------------------------------------------

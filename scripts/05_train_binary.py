@@ -202,7 +202,7 @@ def train_one_fold(
 
     # Lazy imports to avoid loading heavy modules at script import time
     ds = import_module("03_dataset")
-    model_module = import_module("04_model")
+    model_module = import_module("04_model_binary")
 
     train_loader = ds.make_dataloader(samples, train_idx, cfg, train=True)
     val_loader = ds.make_dataloader(samples, val_idx, cfg, train=False)
@@ -387,7 +387,7 @@ def main() -> None:
     # the mean ± std — this is the unbiased final performance estimate.
     # -------------------------------------------------------------------------
     log.info("=== Held-out test set evaluation ===")
-    model_module = import_module("04_model")
+    model_module = import_module("04_model_binary")
     criterion = nn.CrossEntropyLoss()
     aggregation = cfg["evaluation"]["stone_level_aggregation"]
     test_loader = ds.make_dataloader(all_samples, test_idx, cfg, train=False)
