@@ -158,7 +158,7 @@ model:
 # Training
 # -----------------------------------------------------------------------------
 training:
-  device: "mps"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
+  device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
   batch_size: 32
   num_workers: 4
   epochs_frozen: 5         # train only the head with frozen backbone
@@ -212,7 +212,7 @@ model_moe:
   warm_start_from: null
 
 training_moe:
-  device: "mps"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
+  device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
   batch_size: 32
   num_workers: 4
   epochs_frozen: 5        # train only the heads with frozen backbone

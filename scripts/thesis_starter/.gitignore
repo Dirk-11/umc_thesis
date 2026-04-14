@@ -1,6 +1,7 @@
 # Data (usually not committed — too large, privacy-sensitive)
 data/images/
 data/processed/
+config.yaml
 
 # Outputs
 outputs/checkpoints/
