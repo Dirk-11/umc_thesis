@@ -1,8 +1,8 @@
 """
-05_train_moe.py — Train the MoE compositional regression model (Model B).
+05_train_composition.py — Train the compositional regression model (Model B).
 
 Training scheme (staged fine-tuning, same as Model A):
-  Phase 1: Freeze backbone, train expert heads only for N epochs (warm-up)
+  Phase 1: Freeze backbone, train heads only for N epochs (warm-up)
   Phase 2: Unfreeze backbone, fine-tune end-to-end at lower LR for N epochs
 
 Per-fold flow:
@@ -19,10 +19,16 @@ Evaluation metrics (image-level AND stone-level):
   - Dominant acc:  fraction of stones where argmax(pred) == argmax(true)
   - Aitchison:     mean Euclidean distance in centered log-ratio (CLR) space
 
+Multi-task training:
+  - Primary loss: composition regression (KL divergence by default)
+  - Auxiliary loss: presence/absence detection head (BCE per class, independent)
+  - Total loss = comp_loss + aux_loss_weight × aux_loss
+  - Presence targets derived from composition: class present if fraction > presence_threshold
+
 Usage:
-  python scripts/05_train_moe.py              # all folds
-  python scripts/05_train_moe.py --fold 0     # single fold
-  python scripts/05_train_moe.py --quick      # 2 epochs/phase (smoke test)
+  python scripts/05_train_composition.py              # all folds
+  python scripts/05_train_composition.py --fold 0     # single fold
+  python scripts/05_train_composition.py --quick      # 2 epochs/phase (smoke test)
 """
 from __future__ import annotations
 
@@ -42,7 +48,7 @@ from torch import nn
 sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
-log = setup_logging("train_moe")
+log = setup_logging("train_composition")
 
 
 # -----------------------------------------------------------------------------
@@ -69,7 +75,6 @@ def make_criterion(loss_type: str):
     targets: (batch, n_classes) ground-truth composition, sums to 1.0
     """
     if loss_type == "kl":
-        # KLDivLoss expects log-probabilities as input, probabilities as target
         def fn(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
             return F.kl_div(
                 F.log_softmax(logits, dim=1), targets, reduction="batchmean"
@@ -135,15 +140,18 @@ def compute_compositional_metrics(
 # -----------------------------------------------------------------------------
 # Training loop
 # -----------------------------------------------------------------------------
-def train_one_epoch_moe(
+def train_one_epoch(
     model: nn.Module,
     loader,
     optimizer: torch.optim.Optimizer,
     criterion,
     device: torch.device,
+    aux_loss_weight: float,
+    presence_threshold: float,
 ) -> dict:
     model.train()
-    running_loss = 0.0
+    running_comp_loss = 0.0
+    running_aux_loss = 0.0
     total = 0
 
     for images, comp_targets, _stone_ids, _labels in loader:
@@ -151,22 +159,33 @@ def train_one_epoch_moe(
         comp_targets = comp_targets.to(device, non_blocking=True)
 
         optimizer.zero_grad()
-        logits = model(images)
-        loss = criterion(logits, comp_targets)
+        comp_logits, pres_logits = model(images)
+
+        comp_loss = criterion(comp_logits, comp_targets)
+
+        # Aux: binary presence/absence per class (1 if fraction > threshold, else 0)
+        pres_targets = (comp_targets > presence_threshold).float()
+        aux_loss = F.binary_cross_entropy_with_logits(pres_logits, pres_targets)
+
+        loss = comp_loss + aux_loss_weight * aux_loss
         loss.backward()
         optimizer.step()
 
-        running_loss += loss.item() * images.size(0)
+        running_comp_loss += comp_loss.item() * images.size(0)
+        running_aux_loss += aux_loss.item() * images.size(0)
         total += images.size(0)
 
-    return {"loss": running_loss / total}
+    return {
+        "loss": running_comp_loss / total,
+        "aux_loss": running_aux_loss / total,
+    }
 
 
 # -----------------------------------------------------------------------------
 # Evaluation loop
 # -----------------------------------------------------------------------------
 @torch.no_grad()
-def evaluate_moe(
+def evaluate(
     model: nn.Module,
     loader,
     criterion,
@@ -188,12 +207,12 @@ def evaluate_moe(
         images = images.to(device, non_blocking=True)
         comp_dev = comp_targets.to(device, non_blocking=True)
 
-        logits = model(images)
-        loss = criterion(logits, comp_dev)
+        comp_logits, _pres_logits = model(images)
+        loss = criterion(comp_logits, comp_dev)
         running_loss += loss.item() * images.size(0)
         total += images.size(0)
 
-        probs = F.softmax(logits, dim=1).cpu().numpy()
+        probs = F.softmax(comp_logits, dim=1).cpu().numpy()
         all_pred_comp.append(probs)
         all_true_comp.append(comp_targets.numpy())
         all_stone_ids.extend(list(stone_ids))
@@ -240,7 +259,7 @@ def evaluate_moe(
 # -----------------------------------------------------------------------------
 # Per-fold training
 # -----------------------------------------------------------------------------
-def train_one_fold_moe(
+def train_one_fold(
     fold_i: int,
     samples: list,
     train_idx: list[int],
@@ -249,16 +268,20 @@ def train_one_fold_moe(
     device: torch.device,
     fold_dir: Path,
     quick: bool = False,
+    model_type: str = "parallel",
 ) -> dict:
     ensure_dir(fold_dir)
 
-    ds_module   = import_module("03_dataset")
+    ds_module    = import_module("03_dataset")
     model_module = import_module("04_model_composition")
 
     train_loader = ds_module.make_compositional_dataloader(samples, train_idx, cfg, train=True)
     val_loader   = ds_module.make_compositional_dataloader(samples, val_idx,   cfg, train=False)
 
-    model = model_module.build_moe_model(cfg).to(device)
+    if model_type == "simple":
+        model = model_module.build_simple_composition_model(cfg).to(device)
+    else:
+        model = model_module.build_composition_model(cfg).to(device)
     criterion = make_criterion(cfg["training_moe"]["loss"])
     class_names = cfg["class_remapping"]["final_classes"]
     aggregation = cfg["evaluation_moe"]["stone_level_aggregation"]
@@ -266,23 +289,28 @@ def train_one_fold_moe(
     tcfg = cfg["training_moe"]
     epochs_frozen   = 2 if quick else tcfg["epochs_frozen"]
     epochs_finetune = 2 if quick else tcfg["epochs_finetune"]
-    patience = tcfg["early_stopping_patience"]
+    patience           = tcfg["early_stopping_patience"]
+    aux_loss_weight    = tcfg.get("aux_loss_weight", 0.3)
+    presence_threshold = tcfg.get("presence_threshold", 0.05)
 
     history: list[dict] = []
     best_val_loss = float("inf")
     best_epoch = -1
     best_metrics: dict = {}
     epochs_since_best = 0
-    best_ckpt_path = fold_dir / "best_moe.pt"
+    best_ckpt_path = fold_dir / f"best_{model_type}.pt"
 
     def run_phase(phase_name: str, n_epochs: int, optimizer: torch.optim.Optimizer) -> bool:
         nonlocal best_val_loss, best_epoch, best_metrics, epochs_since_best
 
         for epoch in range(n_epochs):
             t0 = time.time()
-            train_m = train_one_epoch_moe(model, train_loader, optimizer, criterion, device)
-            val_m   = evaluate_moe(model, val_loader, criterion, device,
-                                   class_names, aggregation)
+            train_m = train_one_epoch(
+                model, train_loader, optimizer, criterion, device,
+                aux_loss_weight, presence_threshold,
+            )
+            val_m = evaluate(model, val_loader, criterion, device,
+                             class_names, aggregation)
             elapsed = time.time() - t0
 
             global_epoch = len(history)
@@ -290,6 +318,7 @@ def train_one_fold_moe(
                 "fold": fold_i, "phase": phase_name,
                 "epoch": global_epoch, "phase_epoch": epoch,
                 "train_loss": train_m["loss"],
+                "train_aux_loss": train_m["aux_loss"],
                 **{f"val_{k}": v for k, v in val_m.items()},
                 "seconds": round(elapsed, 1),
             }
@@ -297,6 +326,7 @@ def train_one_fold_moe(
             log.info(
                 f"  [{phase_name}] epoch {epoch+1}/{n_epochs} | "
                 f"train_loss={train_m['loss']:.4f} | "
+                f"train_aux={train_m['aux_loss']:.4f} | "
                 f"val_loss={val_m['loss']:.4f} | "
                 f"val_stone_mae={val_m['stone_mae_overall']:.4f} | "
                 f"val_stone_dom_acc={val_m['stone_dominant_acc']:.3f} | "
@@ -340,20 +370,20 @@ def train_one_fold_moe(
         model.unfreeze_backbone()
         log.info(f"  Trainable params: {model.trainable_param_count():,}")
         optimizer = torch.optim.Adam([
-            {"params": model.backbone_parameters(), "lr": tcfg["learning_rate_backbone"]},
-            {"params": model.head_parameters(),     "lr": tcfg["learning_rate_head"]},
+            {"params": model.backbone_parameters(),    "lr": tcfg["learning_rate_backbone"]},
+            {"params": list(model.head_parameters()), "lr": tcfg["learning_rate_head"]},
         ], weight_decay=tcfg["weight_decay"])
         epochs_since_best = 0
         run_phase("finetune", epochs_finetune, optimizer)
 
-    pd.DataFrame(history).to_csv(fold_dir / "history_moe.csv", index=False)
+    pd.DataFrame(history).to_csv(fold_dir / f"history_{model_type}.csv", index=False)
     fold_summary = {
         "fold": fold_i,
         "best_epoch": best_epoch,
         "best_val_loss": best_val_loss,
         **{f"best_{k}": v for k, v in best_metrics.items()},
     }
-    with open(fold_dir / "summary_moe.json", "w") as f:
+    with open(fold_dir / f"summary_{model_type}.json", "w") as f:
         json.dump(fold_summary, f, indent=2)
 
     log.info(
@@ -373,7 +403,10 @@ def main() -> None:
     parser.add_argument("--fold",  type=int,  default=None,  help="Run only this fold")
     parser.add_argument("--quick", action="store_true",
                         help="2 epochs per phase (smoke test)")
+    parser.add_argument("--model", choices=["parallel", "simple"], default="parallel",
+                        help="parallel = expert heads per class (default), simple = single shared head")
     args = parser.parse_args()
+    model_type = args.model
 
     cfg  = load_config()
     seed = cfg["project"]["seed"]
@@ -405,19 +438,21 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
-    ckpt_moe_dir = ensure_dir(resolve_path(cfg, "checkpoints_moe_dir"))
-    logs_dir     = ensure_dir(resolve_path(cfg, "logs_dir"))
+    ckpt_key  = "checkpoints_simple_dir" if model_type == "simple" else "checkpoints_moe_dir"
+    ckpt_dir  = ensure_dir(resolve_path(cfg, ckpt_key))
+    logs_dir  = ensure_dir(resolve_path(cfg, "logs_dir"))
+    log.info(f"Model type: {model_type}  |  checkpoints → {ckpt_dir}")
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
     all_summaries: list[dict] = []
 
     for fold_i in fold_range:
         train_idx, val_idx = folds[fold_i]
-        fold_dir = ckpt_moe_dir / f"fold_{fold_i}"
+        fold_dir = ckpt_dir / f"fold_{fold_i}"
         log.info(f"=== Fold {fold_i} ===")
-        summary = train_one_fold_moe(
+        summary = train_one_fold(
             fold_i, train_val_samples, train_idx, val_idx,
-            cfg, device, fold_dir, quick=args.quick,
+            cfg, device, fold_dir, quick=args.quick, model_type=model_type,
         )
         all_summaries.append(summary)
 
@@ -429,8 +464,8 @@ def main() -> None:
             df[metric_cols].mean().rename("mean"),
             df[metric_cols].std().rename("std"),
         ], axis=1)
-        agg.to_csv(logs_dir / "cv_summary_moe.csv")
-        df.to_csv(logs_dir / "fold_summaries_moe.csv", index=False)
+        agg.to_csv(logs_dir / f"cv_summary_{model_type}.csv")
+        df.to_csv(logs_dir / f"fold_summaries_{model_type}.csv", index=False)
 
         log.info("Cross-fold results:")
         for metric in [
@@ -455,17 +490,21 @@ def main() -> None:
         all_samples, test_idx, cfg, train=False
     )
 
+    build_fn = (model_module.build_simple_composition_model
+                if model_type == "simple"
+                else model_module.build_composition_model)
+
     test_fold_metrics: list[dict] = []
     for fold_i in fold_range:
-        ckpt_path = ckpt_moe_dir / f"fold_{fold_i}" / "best_moe.pt"
+        ckpt_path = ckpt_dir / f"fold_{fold_i}" / f"best_{model_type}.pt"
         if not ckpt_path.exists():
             log.warning(f"  Fold {fold_i}: checkpoint not found at {ckpt_path}, skipping")
             continue
         checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
-        model = model_module.build_moe_model(cfg).to(device)
+        model = build_fn(cfg).to(device)
         model.load_state_dict(checkpoint["model_state"])
-        test_m = evaluate_moe(model, test_loader, criterion, device,
-                              final_classes, aggregation)
+        test_m = evaluate(model, test_loader, criterion, device,
+                          final_classes, aggregation)
         test_fold_metrics.append({"fold": fold_i, **test_m})
         log.info(
             f"  Fold {fold_i} test: "
@@ -476,14 +515,14 @@ def main() -> None:
 
     if test_fold_metrics:
         test_df = pd.DataFrame(test_fold_metrics)
-        test_df.to_csv(logs_dir / "test_fold_metrics_moe.csv", index=False)
+        test_df.to_csv(logs_dir / f"test_fold_metrics_{model_type}.csv", index=False)
         if len(test_fold_metrics) > 1:
             numeric_cols = [c for c in test_df.columns if c != "fold"]
             test_summary = pd.concat([
                 test_df[numeric_cols].mean().rename("mean"),
                 test_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / "test_summary_moe.csv")
+            test_summary.to_csv(logs_dir / f"test_summary_{model_type}.csv")
             log.info("Test set summary (mean ± std across folds):")
             for metric in ["stone_mae_overall", "stone_dominant_acc", "stone_aitchison"]:
                 if metric in test_summary.index:
