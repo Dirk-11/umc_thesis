@@ -51,7 +51,7 @@ import torch.nn.functional as F
 sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
-log = setup_logging("evaluate_moe")
+log = setup_logging("evaluate_composition")
 
 
 # -----------------------------------------------------------------------------
@@ -92,18 +92,22 @@ def run_inference_moe(
     device: torch.device,
     class_names: list[str],
 ) -> pd.DataFrame:
-    """Run MoE model over a DataLoader; return per-image DataFrame.
+    """Run model over a DataLoader; return per-image DataFrame.
 
-    Columns: stone_id, label, pred_{cls}, true_{cls} for each class.
+    Columns: stone_id, label, pred_{cls}, true_{cls}, pres_{cls} for each class.
+    pred_{cls}  — softmax composition fraction from composition head
+    true_{cls}  — ground-truth composition fraction
+    pres_{cls}  — sigmoid presence probability from presence head
     """
     model.eval()
     rows: list[dict] = []
 
     for images, comp_targets, stone_ids, labels in loader:
         images = images.to(device, non_blocking=True)
-        logits = model(images)
-        probs = F.softmax(logits, dim=1).cpu().numpy()
-        true_comp = comp_targets.numpy()
+        comp_logits, pres_logits = model(images)
+        probs      = F.softmax(comp_logits, dim=1).cpu().numpy()
+        pres_probs = torch.sigmoid(pres_logits).cpu().numpy()
+        true_comp  = comp_targets.numpy()
 
         for i, stone_id in enumerate(stone_ids):
             row: dict = {
@@ -113,6 +117,7 @@ def run_inference_moe(
             for j, cls in enumerate(class_names):
                 row[f"pred_{cls}"] = float(probs[i, j])
                 row[f"true_{cls}"] = float(true_comp[i, j])
+                row[f"pres_{cls}"] = float(pres_probs[i, j])
             rows.append(row)
 
     return pd.DataFrame(rows)
@@ -122,13 +127,95 @@ def aggregate_stone_moe(img_df: pd.DataFrame, class_names: list[str]) -> pd.Data
     """Mean-aggregate per-image predictions to stone level, then re-normalise."""
     pred_cols = [f"pred_{c}" for c in class_names]
     true_cols = [f"true_{c}" for c in class_names]
-    stone_df = img_df.groupby("stone_id")[["label"] + pred_cols + true_cols].agg(
-        {**{"label": "first"}, **{c: "mean" for c in pred_cols + true_cols}}
+    pres_cols = [f"pres_{c}" for c in class_names]
+    stone_df = img_df.groupby("stone_id")[["label"] + pred_cols + true_cols + pres_cols].agg(
+        {**{"label": "first"}, **{c: "mean" for c in pred_cols + true_cols + pres_cols}}
     ).reset_index()
-    # Re-normalise predictions to enforce simplex
+    # Re-normalise composition predictions to enforce simplex
     pred_sum = stone_df[pred_cols].sum(axis=1)
     stone_df[pred_cols] = stone_df[pred_cols].div(pred_sum, axis=0)
     return stone_df
+
+
+# -----------------------------------------------------------------------------
+# Detection and quantification metrics
+# -----------------------------------------------------------------------------
+def compute_detection_metrics(
+    stone_df: pd.DataFrame,
+    class_names: list[str],
+    presence_threshold: float = 0.05,
+    detection_threshold: float = 0.5,
+) -> dict:
+    """Precision, recall, F1 per class from the presence head.
+
+    Ground-truth presence: true_fraction > presence_threshold
+    Predicted presence:    pres_prob > detection_threshold
+
+    Returns per-class and macro-averaged metrics prefixed with 'det_'.
+    """
+    from sklearn.metrics import precision_recall_fscore_support
+
+    true_mat = (
+        np.stack([stone_df[f"true_{c}"].values for c in class_names], axis=1)
+        > presence_threshold
+    ).astype(int)  # (N, n_classes)
+    pred_mat = (
+        np.stack([stone_df[f"pres_{c}"].values for c in class_names], axis=1)
+        > detection_threshold
+    ).astype(int)
+
+    metrics: dict = {}
+    for i, cls in enumerate(class_names):
+        p, r, f, _ = precision_recall_fscore_support(
+            true_mat[:, i], pred_mat[:, i], average="binary", zero_division=0
+        )
+        metrics[f"det_precision_{cls}"] = float(p)
+        metrics[f"det_recall_{cls}"]    = float(r)
+        metrics[f"det_f1_{cls}"]        = float(f)
+
+    p, r, f, _ = precision_recall_fscore_support(
+        true_mat, pred_mat, average="macro", zero_division=0
+    )
+    metrics["det_precision_macro"] = float(p)
+    metrics["det_recall_macro"]    = float(r)
+    metrics["det_f1_macro"]        = float(f)
+    return metrics
+
+
+def compute_quantification_mae(
+    stone_df: pd.DataFrame,
+    class_names: list[str],
+    presence_threshold: float = 0.05,
+) -> dict:
+    """MAE computed only over stones where the class is actually present.
+
+    This removes the zero-inflation bias: classes absent from a stone
+    (true_fraction = 0) are excluded from the average, so the metric
+    reflects how accurately the model estimates fractions for minerals
+    that genuinely exist in the stone.
+
+    Returns per-class MAE (with support count) and overall mean,
+    prefixed with 'quant_'.
+    """
+    metrics: dict = {}
+    all_errors: list[float] = []
+
+    for cls in class_names:
+        true_vals = stone_df[f"true_{cls}"].values
+        pred_vals = stone_df[f"pred_{cls}"].values
+        mask = true_vals > presence_threshold
+        n = int(mask.sum())
+        if n > 0:
+            errors = np.abs(pred_vals[mask] - true_vals[mask])
+            mae = float(errors.mean())
+            all_errors.extend(errors.tolist())
+        else:
+            mae = float("nan")
+        metrics[f"quant_mae_{cls}"] = mae
+        metrics[f"quant_n_{cls}"]   = n
+
+    metrics["quant_mae_overall"] = float(np.mean(all_errors)) if all_errors else float("nan")
+    return metrics
 
 
 # -----------------------------------------------------------------------------
@@ -142,19 +229,23 @@ def evaluate_fold_moe(
     device: torch.device,
     fold_dir: Path,
     class_names: list[str],
+    model_type: str = "parallel",
 ) -> tuple[dict, pd.DataFrame]:
-    """Load best_moe.pt and evaluate on the given sample indices."""
-    ckpt_path = fold_dir / "best_moe.pt"
+    """Load best checkpoint and evaluate on the given sample indices."""
+    ckpt_path = fold_dir / f"best_{model_type}.pt"
     if not ckpt_path.exists():
         raise FileNotFoundError(
-            f"No MoE checkpoint for fold {fold_i} at {ckpt_path}. "
-            f"Run 05_train_moe.py first."
+            f"No checkpoint for fold {fold_i} at {ckpt_path}. "
+            f"Run 05_train_composition.py --model {model_type} first."
         )
 
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
 
     model_module = import_module("04_model_composition")
-    model = model_module.build_moe_model(cfg).to(device)
+    if model_type == "simple":
+        model = model_module.build_simple_composition_model(cfg).to(device)
+    else:
+        model = model_module.build_composition_model(cfg).to(device)
     model.load_state_dict(checkpoint["model_state"])
     log.info(
         f"Fold {fold_i}: loaded checkpoint from epoch {checkpoint['epoch']} "
@@ -173,18 +264,36 @@ def evaluate_fold_moe(
     pred_cols = [f"pred_{c}" for c in class_names]
     true_cols = [f"true_{c}" for c in class_names]
 
+    presence_threshold = cfg.get("training_moe", {}).get("presence_threshold", 0.05)
+
     img_metrics = compute_moe_metrics(
         img_df[pred_cols].values, img_df[true_cols].values, class_names, prefix="img_"
     )
     stone_metrics = compute_moe_metrics(
         stone_df[pred_cols].values, stone_df[true_cols].values, class_names, prefix="stone_"
     )
-    metrics = {"fold": fold_i, **img_metrics, **stone_metrics}
+    det_metrics   = compute_detection_metrics(stone_df, class_names, presence_threshold)
+    quant_metrics = compute_quantification_mae(stone_df, class_names, presence_threshold)
+
+    metrics = {"fold": fold_i, **img_metrics, **stone_metrics, **det_metrics, **quant_metrics}
 
     log.info(
         f"  Stone-level — mae={stone_metrics['stone_mae_overall']:.4f}  "
         f"dom_acc={stone_metrics['stone_dominant_acc']:.3f}  "
         f"aitchison={stone_metrics['stone_aitchison']:.4f}"
+    )
+    log.info(
+        f"  Detection (macro) — precision={det_metrics['det_precision_macro']:.3f}  "
+        f"recall={det_metrics['det_recall_macro']:.3f}  "
+        f"f1={det_metrics['det_f1_macro']:.3f}"
+    )
+    log.info(
+        f"  Quantification MAE (present only) — "
+        f"overall={quant_metrics['quant_mae_overall']:.4f}  "
+        + "  ".join(
+            f"{c}={quant_metrics[f'quant_mae_{c}']:.4f}(n={quant_metrics[f'quant_n_{c}']})"
+            for c in class_names
+        )
     )
     return metrics, stone_df
 
@@ -326,7 +435,10 @@ def plot_primary_confusion(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fold", type=int, default=None, help="Evaluate only this fold")
+    parser.add_argument("--model", choices=["parallel", "simple"], default="parallel",
+                        help="parallel = expert heads (default), simple = single shared head")
     args = parser.parse_args()
+    model_type = args.model
 
     cfg = load_config()
     seed = cfg["project"]["seed"]
@@ -340,7 +452,7 @@ def main() -> None:
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    log.info(f"Device: {device}")
+    log.info(f"Device: {device}  |  model: {model_type}")
 
     ds_module     = import_module("03_dataset")
     images_csv    = resolve_path(cfg, "processed_images_csv")
@@ -350,7 +462,6 @@ def main() -> None:
         images_csv, final_classes, require_files_exist=True
     )
 
-    # Reconstruct the same holdout used during training (same seed = same stones)
     test_fraction = cfg["cv"]["test_fraction"]
     train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)
     train_val_samples = [all_samples[i] for i in train_val_idx]
@@ -362,34 +473,37 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
-    ckpt_moe_dir = resolve_path(cfg, "checkpoints_moe_dir")
-    figures_dir  = ensure_dir(resolve_path(cfg, "figures_dir"))
-    logs_dir     = ensure_dir(resolve_path(cfg, "logs_dir"))
+    ckpt_key  = "checkpoints_simple_dir" if model_type == "simple" else "checkpoints_moe_dir"
+    ckpt_dir  = resolve_path(cfg, ckpt_key)
+    figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
+    logs_dir    = ensure_dir(resolve_path(cfg, "logs_dir"))
+    p = model_type  # short alias for filenames
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
 
     # -------------------------------------------------------------------------
     # Validation fold evaluation
     # -------------------------------------------------------------------------
-    all_metrics:    list[dict]          = []
-    all_stone_dfs:  list[pd.DataFrame]  = []
+    all_metrics:   list[dict]         = []
+    all_stone_dfs: list[pd.DataFrame] = []
 
     for fold_i in fold_range:
         _, val_idx = folds[fold_i]
-        fold_dir = ckpt_moe_dir / f"fold_{fold_i}"
+        fold_dir = ckpt_dir / f"fold_{fold_i}"
         metrics, stone_df = evaluate_fold_moe(
-            fold_i, train_val_samples, val_idx, cfg, device, fold_dir, final_classes
+            fold_i, train_val_samples, val_idx, cfg, device, fold_dir,
+            final_classes, model_type=model_type,
         )
         all_metrics.append(metrics)
         all_stone_dfs.append(stone_df)
 
     all_stones = pd.concat(all_stone_dfs, ignore_index=True)
-    all_stones.to_csv(logs_dir / "eval_moe_stone_predictions.csv", index=False)
-    log.info(f"Saved: {logs_dir / 'eval_moe_stone_predictions.csv'}")
+    all_stones.to_csv(logs_dir / f"eval_{p}_stone_predictions.csv", index=False)
+    log.info(f"Saved: {logs_dir / f'eval_{p}_stone_predictions.csv'}")
 
     fold_df = pd.DataFrame(all_metrics)
-    fold_df.to_csv(logs_dir / "eval_moe_fold_summaries.csv", index=False)
-    log.info(f"Saved: {logs_dir / 'eval_moe_fold_summaries.csv'}")
+    fold_df.to_csv(logs_dir / f"eval_{p}_fold_summaries.csv", index=False)
+    log.info(f"Saved: {logs_dir / f'eval_{p}_fold_summaries.csv'}")
 
     cv_summary = None
     if len(all_metrics) > 1:
@@ -398,10 +512,14 @@ def main() -> None:
             fold_df[numeric_cols].mean().rename("mean"),
             fold_df[numeric_cols].std().rename("std"),
         ], axis=1)
-        cv_summary.to_csv(logs_dir / "eval_moe_cv_summary.csv")
-        log.info(f"Saved: {logs_dir / 'eval_moe_cv_summary.csv'}")
+        cv_summary.to_csv(logs_dir / f"eval_{p}_cv_summary.csv")
+        log.info(f"Saved: {logs_dir / f'eval_{p}_cv_summary.csv'}")
         log.info("Cross-fold validation results:")
-        for metric in ["stone_mae_overall", "stone_dominant_acc", "stone_aitchison"]:
+        for metric in [
+            "stone_mae_overall", "stone_dominant_acc", "stone_aitchison",
+            "det_f1_macro", "det_precision_macro", "det_recall_macro",
+            "quant_mae_overall",
+        ]:
             if metric in cv_summary.index:
                 log.info(
                     f"  {metric}: "
@@ -412,32 +530,32 @@ def main() -> None:
     # Figures — val
     if cv_summary is not None:
         plot_mae_bars(cv_summary, final_classes,
-                      figures_dir / "moe_mae_bars.png")
+                      figures_dir / f"{p}_mae_bars.png")
     plot_composition_scatter(all_stones, final_classes,
-                             figures_dir / "moe_composition_scatter.png")
+                             figures_dir / f"{p}_composition_scatter.png")
     plot_primary_confusion(all_stones, final_classes,
-                           figures_dir / "moe_primary_confusion.png")
+                           figures_dir / f"{p}_primary_confusion.png")
 
     # -------------------------------------------------------------------------
     # Held-out test set evaluation
     # -------------------------------------------------------------------------
     log.info("=== Held-out test set evaluation ===")
-    test_metrics_all:  list[dict]         = []
-    test_stone_dfs:    list[pd.DataFrame] = []
+    test_metrics_all: list[dict]         = []
+    test_stone_dfs:   list[pd.DataFrame] = []
 
     for fold_i in fold_range:
-        fold_dir = ckpt_moe_dir / f"fold_{fold_i}"
+        fold_dir = ckpt_dir / f"fold_{fold_i}"
         t_metrics, t_stone_df = evaluate_fold_moe(
-            fold_i, all_samples, test_idx, cfg, device, fold_dir, final_classes
+            fold_i, all_samples, test_idx, cfg, device, fold_dir,
+            final_classes, model_type=model_type,
         )
         test_metrics_all.append(t_metrics)
         test_stone_dfs.append(t_stone_df)
 
     if test_metrics_all:
         test_fold_df = pd.DataFrame(test_metrics_all)
-        test_fold_df.to_csv(logs_dir / "eval_moe_test_fold_summaries.csv", index=False)
+        test_fold_df.to_csv(logs_dir / f"eval_{p}_test_fold_summaries.csv", index=False)
 
-        # Average per-stone predictions across folds (same stones seen by all)
         pred_cols = [f"pred_{c}" for c in final_classes]
         true_cols = [f"true_{c}" for c in final_classes]
         all_test = pd.concat(test_stone_dfs, ignore_index=True)
@@ -446,8 +564,8 @@ def main() -> None:
         ).reset_index()
         pred_sum = test_agg[pred_cols].sum(axis=1)
         test_agg[pred_cols] = test_agg[pred_cols].div(pred_sum, axis=0)
-        test_agg.to_csv(logs_dir / "eval_moe_test_stone_predictions.csv", index=False)
-        log.info(f"Saved: {logs_dir / 'eval_moe_test_stone_predictions.csv'}")
+        test_agg.to_csv(logs_dir / f"eval_{p}_test_stone_predictions.csv", index=False)
+        log.info(f"Saved: {logs_dir / f'eval_{p}_test_stone_predictions.csv'}")
 
         if len(test_metrics_all) > 1:
             numeric_cols = [c for c in test_fold_df.columns if c != "fold"]
@@ -455,10 +573,14 @@ def main() -> None:
                 test_fold_df[numeric_cols].mean().rename("mean"),
                 test_fold_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / "eval_moe_test_summary.csv")
-            log.info(f"Saved: {logs_dir / 'eval_moe_test_summary.csv'}")
+            test_summary.to_csv(logs_dir / f"eval_{p}_test_summary.csv")
+            log.info(f"Saved: {logs_dir / f'eval_{p}_test_summary.csv'}")
             log.info("Test set results (mean ± std across folds):")
-            for metric in ["stone_mae_overall", "stone_dominant_acc", "stone_aitchison"]:
+            for metric in [
+                "stone_mae_overall", "stone_dominant_acc", "stone_aitchison",
+                "det_f1_macro", "det_precision_macro", "det_recall_macro",
+                "quant_mae_overall",
+            ]:
                 if metric in test_summary.index:
                     log.info(
                         f"  {metric}: "
@@ -466,17 +588,17 @@ def main() -> None:
                         f"{test_summary.at[metric, 'std']:.4f}"
                     )
             plot_mae_bars(test_summary, final_classes,
-                          figures_dir / "moe_mae_bars_test.png",
-                          title="Per-class MAE — stone level (held-out test set)")
+                          figures_dir / f"{p}_mae_bars_test.png",
+                          title=f"Per-class MAE — stone level (held-out test set) [{p}]")
 
         plot_composition_scatter(test_agg, final_classes,
-                                 figures_dir / "moe_composition_scatter_test.png",
-                                 title="Predicted vs true composition — held-out test set")
+                                 figures_dir / f"{p}_composition_scatter_test.png",
+                                 title=f"Predicted vs true composition — held-out test set [{p}]")
         plot_primary_confusion(test_agg, final_classes,
-                               figures_dir / "moe_primary_confusion_test.png",
-                               title="Primary component — predicted vs true (held-out test set)")
+                               figures_dir / f"{p}_primary_confusion_test.png",
+                               title=f"Primary component — predicted vs true (held-out test set) [{p}]")
 
-    log.info("MoE evaluation complete.")
+    log.info(f"Evaluation complete ({model_type}).")
 
 
 if __name__ == "__main__":

@@ -16,7 +16,8 @@ paths:
   outputs_dir: "outputs"
   figures_dir: "outputs/figures"
   checkpoints_dir: "outputs/checkpoints"
-  checkpoints_moe_dir: "outputs/checkpoints_moe"
+  checkpoints_moe_dir: "outputs/checkpoints_composition"
+  checkpoints_simple_dir: "outputs/checkpoints_simple"
   logs_dir: "outputs/logs"
   processed_csv: "data/processed/stones_labeled.csv"
   processed_images_csv: "data/processed/images_labeled.csv"
@@ -200,16 +201,18 @@ evaluation:
     - "confusion_matrix"
 
 # -----------------------------------------------------------------------------
-# Model B — Mixture-of-Experts compositional regression
+# Model B — Compositional regression with multi-label detection
 # -----------------------------------------------------------------------------
-model_moe:
+model_composition:
   backbone: "resnet50"
   pretrained_weights: "IMAGENET1K_V2"
   head_hidden_dim: 128
+  aux_head_hidden_dim: 128
   head_dropout: 0.3
   # Optional: path to a Model A fold checkpoint to warm-start the backbone.
   # e.g. "outputs/checkpoints/fold_0/best.pt". null = use ImageNet weights only.
   warm_start_from: null
+  purity_model_checkpoint: null
 
 training_moe:
   device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
@@ -222,6 +225,8 @@ training_moe:
   weight_decay: 0.0001
   early_stopping_patience: 7
   loss: "kl"              # "kl" (KL divergence), "l1", or "mse"
+  aux_loss_weight: 0.3    # weight for presence/absence detection BCE loss
+  presence_threshold: 0.05  # fraction threshold to define class as "present"
 
 evaluation_moe:
   stone_level_aggregation: "mean_composition"
