@@ -29,7 +29,7 @@ paths:
 data:
   # Purity threshold: stones with primary_pct >= this value are labeled "pure".
   # Default 90% (following Kim 2022). Lower values = more stones labeled pure.
-  purity_threshold: 100
+  purity_threshold: 90
 
   # Stones to exclude entirely (no valid composition labels)
   exclude_stones:
