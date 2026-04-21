@@ -16,6 +16,7 @@ paths:
   outputs_dir: "outputs"
   figures_dir: "outputs/figures"
   checkpoints_dir: "outputs/checkpoints"
+  checkpoints_frozen_dir: "outputs/checkpoints_frozen"
   checkpoints_moe_dir: "outputs/checkpoints_composition"
   checkpoints_simple_dir: "outputs/checkpoints_simple"
   logs_dir: "outputs/logs"

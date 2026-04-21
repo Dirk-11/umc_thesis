@@ -21,8 +21,9 @@ Outputs (all under outputs/):
   logs/eval_stone_predictions.csv — per-stone prob + pred + true label
 
 Usage:
-  python scripts/06_evaluate.py              # evaluate all folds
-  python scripts/06_evaluate.py --fold 0     # single fold only
+  python scripts/06_evaluate.py                        # evaluate all folds (fine-tuned)
+  python scripts/06_evaluate.py --fold 0               # single fold only
+  python scripts/06_evaluate.py --frozen-baseline      # evaluate the frozen backbone baseline
 
 Run 05_train.py first to produce the checkpoints.
 """
@@ -267,6 +268,9 @@ def evaluate_fold(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fold", type=int, default=None, help="Evaluate only this fold")
+    parser.add_argument("--frozen-baseline", action="store_true",
+                        help="Load checkpoints from checkpoints_frozen/ (the --no-finetune run). "
+                             "Outputs are written with a _frozen suffix.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -302,7 +306,9 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
-    ckpt_dir = resolve_path(cfg, "checkpoints_dir")
+    ckpt_key = "checkpoints_frozen_dir" if args.frozen_baseline else "checkpoints_dir"
+    ckpt_dir = resolve_path(cfg, ckpt_key)
+    suffix = "_frozen" if args.frozen_baseline else ""
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
@@ -331,15 +337,15 @@ def main() -> None:
     # Save per-stone predictions
     # -------------------------------------------------------------------------
     all_stones = pd.concat(all_stone_dfs, ignore_index=True)
-    all_stones.to_csv(logs_dir / "eval_stone_predictions.csv", index=False)
-    log.info(f"Saved: {logs_dir / 'eval_stone_predictions.csv'}")
+    all_stones.to_csv(logs_dir / f"eval_stone_predictions{suffix}.csv", index=False)
+    log.info(f"Saved: {logs_dir / f'eval_stone_predictions{suffix}.csv'}")
 
     # -------------------------------------------------------------------------
     # Per-fold metrics CSV
     # -------------------------------------------------------------------------
     fold_df = pd.DataFrame(all_metrics)
-    fold_df.to_csv(logs_dir / "eval_fold_summaries.csv", index=False)
-    log.info(f"Saved: {logs_dir / 'eval_fold_summaries.csv'}")
+    fold_df.to_csv(logs_dir / f"eval_fold_summaries{suffix}.csv", index=False)
+    log.info(f"Saved: {logs_dir / f'eval_fold_summaries{suffix}.csv'}")
 
     # -------------------------------------------------------------------------
     # Cross-fold summary (only when > 1 fold evaluated)
@@ -350,8 +356,8 @@ def main() -> None:
             fold_df[numeric_cols].mean().rename("mean"),
             fold_df[numeric_cols].std().rename("std"),
         ], axis=1)
-        summary.to_csv(logs_dir / "eval_cv_summary.csv")
-        log.info(f"Saved: {logs_dir / 'eval_cv_summary.csv'}")
+        summary.to_csv(logs_dir / f"eval_cv_summary{suffix}.csv")
+        log.info(f"Saved: {logs_dir / f'eval_cv_summary{suffix}.csv'}")
 
         log.info("Cross-fold results:")
         for metric in ["stone_accuracy", "stone_f1", "stone_roc_auc"]:
@@ -368,7 +374,7 @@ def main() -> None:
     plot_confusion_matrix(
         cm,
         class_names=["pure", "mixed"],
-        output_path=figures_dir / "confusion_matrix.png",
+        output_path=figures_dir / f"confusion_matrix{suffix}.png",
     )
 
     # -------------------------------------------------------------------------
@@ -378,7 +384,7 @@ def main() -> None:
         fprs, tprs, aucs = zip(*fold_roc)
         plot_roc_curves(
             list(fprs), list(tprs), list(aucs),
-            output_path=figures_dir / "roc_curve.png",
+            output_path=figures_dir / f"roc_curve{suffix}.png",
         )
     else:
         log.warning("Skipping ROC plot — not enough class diversity in val sets")
@@ -408,7 +414,7 @@ def main() -> None:
 
     if test_metrics_all:
         test_fold_df = pd.DataFrame(test_metrics_all)
-        test_fold_df.to_csv(logs_dir / "eval_test_fold_summaries.csv", index=False)
+        test_fold_df.to_csv(logs_dir / f"eval_test_fold_summaries{suffix}.csv", index=False)
 
         # Aggregate stone predictions across folds (all folds see the same test stones)
         all_test_stones = pd.concat(test_stone_dfs, ignore_index=True)
@@ -418,8 +424,8 @@ def main() -> None:
             prob_mixed=("prob_mixed", "mean"),
         ).reset_index()
         test_stone_agg["pred"] = (test_stone_agg["prob_mixed"] >= 0.5).astype(int)
-        test_stone_agg.to_csv(logs_dir / "eval_test_stone_predictions.csv", index=False)
-        log.info(f"Saved: {logs_dir / 'eval_test_stone_predictions.csv'}")
+        test_stone_agg.to_csv(logs_dir / f"eval_test_stone_predictions{suffix}.csv", index=False)
+        log.info(f"Saved: {logs_dir / f'eval_test_stone_predictions{suffix}.csv'}")
 
         if len(test_metrics_all) > 1:
             numeric_cols = [c for c in test_fold_df.columns if c != "fold"]
@@ -427,8 +433,8 @@ def main() -> None:
                 test_fold_df[numeric_cols].mean().rename("mean"),
                 test_fold_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / "eval_test_summary.csv")
-            log.info(f"Saved: {logs_dir / 'eval_test_summary.csv'}")
+            test_summary.to_csv(logs_dir / f"eval_test_summary{suffix}.csv")
+            log.info(f"Saved: {logs_dir / f'eval_test_summary{suffix}.csv'}")
             log.info("Test set results (mean ± std across folds):")
             for metric in ["stone_accuracy", "stone_f1", "stone_roc_auc"]:
                 if metric in test_summary.index:
@@ -443,7 +449,7 @@ def main() -> None:
         plot_confusion_matrix(
             cm_test,
             class_names=["pure", "mixed"],
-            output_path=figures_dir / "confusion_matrix_test.png",
+            output_path=figures_dir / f"confusion_matrix_test{suffix}.png",
             title="Confusion matrix — held-out test set",
         )
 
@@ -452,7 +458,7 @@ def main() -> None:
             fprs_t, tprs_t, aucs_t = zip(*test_roc)
             plot_roc_curves(
                 list(fprs_t), list(tprs_t), list(aucs_t),
-                output_path=figures_dir / "roc_curve_test.png",
+                output_path=figures_dir / f"roc_curve_test{suffix}.png",
             )
 
     log.info("Evaluation complete.")

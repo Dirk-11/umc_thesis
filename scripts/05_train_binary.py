@@ -15,9 +15,10 @@ Per-fold flow:
 After all folds: write a cross-fold summary (mean ± std of val metrics).
 
 Usage:
-  python scripts/05_train.py              # runs all folds
-  python scripts/05_train.py --fold 0     # single fold only (for dev/debug)
-  python scripts/05_train.py --quick      # 2 epochs per phase, for smoke test
+  python scripts/05_train.py                  # runs all folds (full fine-tuning)
+  python scripts/05_train.py --fold 0         # single fold only (for dev/debug)
+  python scripts/05_train.py --quick          # 2 epochs per phase, for smoke test
+  python scripts/05_train.py --no-finetune    # frozen backbone baseline (Phase 1 only)
 
 The image files must exist for this to run. Run 01_data_prep.py first to
 verify everything is in place.
@@ -196,6 +197,7 @@ def train_one_fold(
     device: torch.device,
     fold_dir: Path,
     quick: bool = False,
+    no_finetune: bool = False,
 ) -> dict:
     """Train a single fold end-to-end and return best-epoch metrics."""
     ensure_dir(fold_dir)
@@ -287,8 +289,10 @@ def train_one_fold(
     stopped = run_phase("frozen", epochs_frozen, optimizer)
 
     # Phase 2: fine-tune whole model
+    if no_finetune:
+        log.info(f"Fold {fold_i} — Skipping Phase 2 (--no-finetune)")
+        stopped = True
     if not stopped:
-        log.info(f"Fold {fold_i} — Phase 2: fine-tune, {epochs_finetune} epochs")
         model.unfreeze_backbone()
         log.info(f"  Trainable params: {model.trainable_param_count():,}")
         # Two param groups so backbone gets a smaller LR than head
@@ -322,6 +326,9 @@ def main() -> None:
     parser.add_argument("--fold", type=int, default=None, help="Run only this fold")
     parser.add_argument("--quick", action="store_true",
                         help="2 epochs per phase, for smoke testing")
+    parser.add_argument("--no-finetune", action="store_true",
+                        help="Skip Phase 2 (frozen backbone baseline). "
+                             "Saves checkpoints to checkpoints_frozen/ instead of checkpoints/.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -351,7 +358,8 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
-    ckpt_dir = ensure_dir(resolve_path(cfg, "checkpoints_dir"))
+    ckpt_key = "checkpoints_frozen_dir" if args.no_finetune else "checkpoints_dir"
+    ckpt_dir = ensure_dir(resolve_path(cfg, ckpt_key))
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
     # Run folds (indices are into train_val_samples)
@@ -363,10 +371,12 @@ def main() -> None:
         summary = train_one_fold(
             fold_i, train_val_samples, train_idx, val_idx,
             cfg, device, fold_dir, quick=args.quick,
+            no_finetune=args.no_finetune,
         )
         all_summaries.append(summary)
 
     # Cross-fold aggregate (only meaningful when running all folds)
+    suffix = "_frozen" if args.no_finetune else ""
     if args.fold is None and len(all_summaries) > 1:
         df = pd.DataFrame(all_summaries)
         metric_cols = [c for c in df.columns if c.startswith("best_") and c != "best_epoch"]
@@ -374,8 +384,8 @@ def main() -> None:
             df[metric_cols].mean().rename("mean"),
             df[metric_cols].std().rename("std"),
         ], axis=1)
-        agg.to_csv(logs_dir / "cv_summary.csv")
-        df.to_csv(logs_dir / "fold_summaries.csv", index=False)
+        agg.to_csv(logs_dir / f"cv_summary{suffix}.csv")
+        df.to_csv(logs_dir / f"fold_summaries{suffix}.csv", index=False)
         log.info("Cross-fold summary:")
         for metric in ["best_val_stone_accuracy", "best_val_stone_f1"]:
             if metric in agg.index:
@@ -412,14 +422,14 @@ def main() -> None:
 
     if test_fold_metrics:
         test_df = pd.DataFrame(test_fold_metrics)
-        test_df.to_csv(logs_dir / "test_fold_metrics.csv", index=False)
+        test_df.to_csv(logs_dir / f"test_fold_metrics{suffix}.csv", index=False)
         if len(test_fold_metrics) > 1:
             numeric_cols = [c for c in test_df.columns if c != "fold"]
             test_summary = pd.concat([
                 test_df[numeric_cols].mean().rename("mean"),
                 test_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / "test_summary.csv")
+            test_summary.to_csv(logs_dir / f"test_summary{suffix}.csv")
             log.info("Test set summary (mean ± std across folds):")
             for metric in ["stone_accuracy", "stone_f1", "stone_roc_auc"]:
                 if metric in test_summary.index:
