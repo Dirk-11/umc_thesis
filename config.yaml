@@ -19,6 +19,7 @@ paths:
   checkpoints_frozen_dir: "outputs/checkpoints_frozen"
   checkpoints_moe_dir: "outputs/checkpoints_composition"
   checkpoints_simple_dir: "outputs/checkpoints_simple"
+  checkpoints_multiclass_dir: "outputs/checkpoints_multiclass"
   logs_dir: "outputs/logs"
   processed_csv: "data/processed/stones_labeled.csv"
   processed_images_csv: "data/processed/images_labeled.csv"
@@ -82,6 +83,7 @@ class_remapping:
   # ---- Stage 1: OTH subtype remapping ----
   # Spelling variants in the Excel `oth_detail` column → normalized name
   oth_spelling_normalization:
+    "ca(6x)mg(x)(po)4 nativ": "Ca-Mg phosphate"
     "Natriumhydrogeenuraathydraat": "Na-H-urate hydrate"
     "Natriumhydrogenuraathydraat": "Na-H-urate hydrate"
     "Natriumhydrogenurat-hydrat": "Na-H-urate hydrate"
@@ -200,6 +202,19 @@ evaluation:
     - "f1"
     - "roc_auc"
     - "confusion_matrix"
+
+# -----------------------------------------------------------------------------
+# Model C — Multi-class primary component classification
+# -----------------------------------------------------------------------------
+# Predicts which of the 6 final classes is the dominant (primary) component.
+# Uses the same StoneClassifier backbone as Model A, but with num_classes=6
+# and cross-entropy loss.
+# -----------------------------------------------------------------------------
+model_multiclass:
+  backbone: "resnet50"
+  pretrained_weights: "IMAGENET1K_V2"
+  num_classes: 6      # one per final_class (CaOx, CHP, UA, MAP, CYS, OTH)
+  dropout: 0.3
 
 # -----------------------------------------------------------------------------
 # Model B — Compositional regression with multi-label detection
