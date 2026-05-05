@@ -188,8 +188,19 @@ def train_one_fold(
         dropout=mc["dropout"],
     ).to(device)
 
-    criterion = nn.CrossEntropyLoss()
-    tcfg = cfg["training"]
+    # Class-weighted loss to handle imbalance (CaOx=128, OTH=4)
+    from collections import Counter
+    train_labels = [samples[i].label for i in train_idx]
+    counts = Counter(train_labels)
+    n_train = len(train_labels)
+    n_classes = len(class_names)
+    class_weights = torch.tensor(
+        [n_train / (n_classes * counts.get(i, 1)) for i in range(n_classes)],
+        dtype=torch.float32,
+    ).to(device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+    tcfg = cfg["training_multiclass"]
     epochs_frozen   = 2 if quick else tcfg["epochs_frozen"]
     epochs_finetune = 2 if quick else tcfg["epochs_finetune"]
     patience = tcfg["early_stopping_patience"]
@@ -270,6 +281,7 @@ def train_one_fold(
             {"params": model.head_parameters(),     "lr": tcfg["learning_rate_head"]},
         ], weight_decay=tcfg["weight_decay"])
         epochs_since_best = 0
+        best_val_loss = float("inf")
         run_phase("finetune", epochs_finetune, optimizer)
 
     pd.DataFrame(history).to_csv(fold_dir / "history.csv", index=False)
@@ -304,7 +316,7 @@ def main() -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    device = resolve_device(cfg["training"]["device"])
+    device = resolve_device(cfg["training_multiclass"]["device"])
     log.info(f"Device: {device}")
 
     class_names = cfg["class_remapping"]["final_classes"]
@@ -316,17 +328,24 @@ def main() -> None:
         images_csv, class_names, require_files_exist=True
     )
 
-    # Hold out test set (stratified on primary component label)
-    test_fraction = cfg["cv"]["test_fraction"]
-    train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)
-    train_val_samples = [all_samples[i] for i in train_val_idx]
+    # Stratify on binary pure/mixed labels to produce the same folds as Models A and B
+    binary_labels = [s.binary_label for s in all_samples]
 
-    # Folds — stratified on primary component label
+    # Hold out test set — same split as Models A and B
+    test_fraction = cfg["cv"]["test_fraction"]
+    train_val_idx, test_idx = ds_module.make_test_holdout(
+        all_samples, test_fraction, seed, stratify_labels=binary_labels
+    )
+    train_val_samples = [all_samples[i] for i in train_val_idx]
+    train_val_binary  = [binary_labels[i] for i in train_val_idx]
+
+    # Folds — same stratification as Models A and B
     folds = ds_module.make_stratified_folds(
         train_val_samples,
         n_folds=cfg["cv"]["n_folds"],
         seed=seed,
         shuffle=cfg["cv"]["shuffle"],
+        stratify_labels=train_val_binary,
     )
 
     ckpt_dir = ensure_dir(resolve_path(cfg, "checkpoints_multiclass_dir"))

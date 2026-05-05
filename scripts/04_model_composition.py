@@ -152,7 +152,7 @@ class CompositionModel(nn.Module):
         """Return parameters for both composition and presence heads (not backbone)."""
         params = list(self.composition_heads.parameters())
         params += list(self.presence_head.parameters())
-        return iter(params)
+        return params
 
     def backbone_parameters(self):
         return self.backbone.parameters()
@@ -241,7 +241,7 @@ class SimpleCompositionModel(nn.Module):
     def head_parameters(self):
         params = list(self.composition_head.parameters())
         params += list(self.presence_head.parameters())
-        return iter(params)
+        return params
 
     def backbone_parameters(self):
         return self.backbone.parameters()
@@ -267,7 +267,7 @@ def build_composition_model(cfg: dict) -> CompositionModel:
         class_names=classes,
         hidden_dim=m["head_hidden_dim"],
         dropout=m["head_dropout"],
-        aux_head_hidden_dim=m.get("aux_head_hidden_dim"),
+        aux_head_hidden_dim=m["aux_head_hidden_dim"],
     )
     log.info(
         f"Built CompositionModel: {m['backbone']} backbone + "
@@ -297,7 +297,7 @@ def build_simple_composition_model(cfg: dict) -> SimpleCompositionModel:
         class_names=classes,
         hidden_dim=m["head_hidden_dim"],
         dropout=m["head_dropout"],
-        aux_head_hidden_dim=m.get("aux_head_hidden_dim"),
+        aux_head_hidden_dim=m["aux_head_hidden_dim"],
     )
     log.info(
         f"Built SimpleCompositionModel: {m['backbone']} backbone + "

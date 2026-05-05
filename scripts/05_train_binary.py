@@ -300,8 +300,9 @@ def train_one_fold(
             {"params": model.backbone_parameters(), "lr": tcfg["learning_rate_backbone"]},
             {"params": model.head_parameters(),     "lr": tcfg["learning_rate_head"]},
         ], weight_decay=tcfg["weight_decay"])
-        # Reset early-stopping counter for phase 2
+        # Reset early-stopping counter and best loss for phase 2
         epochs_since_best = 0
+        best_val_loss = float("inf")
         run_phase("finetune", epochs_finetune, optimizer)
 
     # Save per-fold outputs

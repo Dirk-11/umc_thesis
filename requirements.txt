@@ -40,22 +40,26 @@
 #
 #   python scripts/01_prepare_data.py
 #   python scripts/02_prepare_images.py
-#   python scripts/05_train.py
-#   python scripts/05_train_moe.py
-#   python scripts/06_evaluate.py
-#   python scripts/06_evaluate_moe.py
+#   python scripts/05_train_binary.py          # Model A: pure/mixed
+#   python scripts/05_train_composition.py     # Model B: composition regression
+#   python scripts/05_train_multiclass.py      # Model C: dominant component
+#   python scripts/06_evaluate_binary.py
+#   python scripts/06_evaluate_composition.py
+#   python scripts/06_evaluate_multiclass.py
+#   python scripts/statistical_tests.py        # cross-model significance tests
 #
 # --- Note on num_workers (Windows only) -------------------------------------
 #
 #   If you get a multiprocessing error during training, open config.yaml and set:
 #     num_workers: 0
-#   under both `training:` and `training_moe:`.
+#   under both `training:`, `training_composition:`, and `training_multiclass:`.
 #
 # =============================================================================
 
 numpy
 pandas
 scikit-learn
+scipy
 matplotlib
 Pillow
 PyYAML
