@@ -152,20 +152,27 @@ def load_image_samples(images_csv: Path, require_files_exist: bool = True) -> li
 # Stone-level stratified k-fold
 # -----------------------------------------------------------------------------
 def make_stratified_folds(
-    samples: list[StoneSample],
+    samples: list,
     n_folds: int,
     seed: int,
     shuffle: bool = True,
+    stratify_labels: list[int] | None = None,
 ) -> list[tuple[list[int], list[int]]]:
     """Return list of (train_idx, val_idx) pairs into the samples list.
 
     Splits are computed at the STONE level — all 3 photos of a stone end up
-    in the same fold. Stratification is on the stone-level binary label.
+    in the same fold. Stratification uses stratify_labels if provided, else
+    s.label. Pass binary_labels for Model C so splits match Models A and B.
     """
     # Build stone-level table: one row per stone
-    stone_df = pd.DataFrame([
-        {"stone_id": s.stone_id, "label": s.label} for s in samples
-    ]).drop_duplicates(subset="stone_id").reset_index(drop=True)
+    if stratify_labels is not None:
+        assert len(stratify_labels) == len(samples), \
+            "stratify_labels must have one entry per sample"
+        rows = [{"stone_id": s.stone_id, "label": stratify_labels[i]}
+                for i, s in enumerate(samples)]
+    else:
+        rows = [{"stone_id": s.stone_id, "label": s.label} for s in samples]
+    stone_df = pd.DataFrame(rows).drop_duplicates(subset="stone_id").reset_index(drop=True)
 
     skf = StratifiedKFold(n_splits=n_folds, shuffle=shuffle, random_state=seed if shuffle else None)
 
@@ -213,10 +220,11 @@ def make_test_holdout(
     samples: list,
     test_fraction: float,
     seed: int,
+    stratify_labels: list[int] | None = None,
 ) -> tuple[list[int], list[int]]:
     """Split off a held-out test set at stone level.
 
-    Stratified on the binary pure/mixed label to preserve class balance.
+    Stratified on stratify_labels if provided, else on s.label.
     Must be called with the same seed as make_stratified_folds so the splits
     are reproducible across scripts.
 
@@ -226,9 +234,13 @@ def make_test_holdout(
     """
     from sklearn.model_selection import StratifiedShuffleSplit
 
-    stone_df = pd.DataFrame([
-        {"stone_id": s.stone_id, "label": s.label} for s in samples
-    ]).drop_duplicates(subset="stone_id").reset_index(drop=True)
+    if stratify_labels is not None:
+        assert len(stratify_labels) == len(samples)
+        rows = [{"stone_id": s.stone_id, "label": stratify_labels[i]}
+                for i, s in enumerate(samples)]
+    else:
+        rows = [{"stone_id": s.stone_id, "label": s.label} for s in samples]
+    stone_df = pd.DataFrame(rows).drop_duplicates(subset="stone_id").reset_index(drop=True)
 
     sss = StratifiedShuffleSplit(n_splits=1, test_size=test_fraction, random_state=seed)
     train_val_stone_idx, test_stone_idx = next(
@@ -382,7 +394,122 @@ def make_compositional_dataloader(
     subset = [samples[i] for i in indices]
     transform = build_transforms(cfg, train=train)
     dataset = CompositionalKidneyStoneDataset(subset, transform)
-    tcfg = cfg["training_moe"]
+    tcfg = cfg["training_composition"]
+    return DataLoader(
+        dataset,
+        batch_size=tcfg["batch_size"],
+        shuffle=train,
+        num_workers=tcfg["num_workers"],
+        pin_memory=tcfg["device"] != "cpu",
+        drop_last=False,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Model C — Multi-class primary component dataset
+# -----------------------------------------------------------------------------
+@dataclass
+class MulticlassSample:
+    """One image from one stone, labelled with the primary (dominant) component."""
+    image_path: str
+    label: int          # index into final_classes (argmax of composition vector)
+    binary_label: int   # 0=pure, 1=mixed — used for fold stratification to match Models A/B
+    stone_id: str
+    class_name: str     # human-readable class name for the label
+
+
+class MulticlassKidneyStoneDataset(Dataset):
+    """Image-level dataset for 6-class primary component classification.
+
+    Each item returns (image_tensor, label_int, stone_id) — same signature as
+    KidneyStoneDataset so training/eval code can be shared.
+    """
+
+    def __init__(self, samples: list[MulticlassSample], transform: transforms.Compose):
+        self.samples = samples
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, int, str]:
+        sample = self.samples[idx]
+        img = Image.open(sample.image_path).convert("RGB")
+        img = self.transform(img)
+        return img, sample.label, sample.stone_id
+
+
+def load_multiclass_samples(
+    images_csv: Path,
+    final_classes: list[str],
+    require_files_exist: bool = True,
+) -> list[MulticlassSample]:
+    """Read the image-level CSV and build MulticlassSample list.
+
+    The label for each stone is the index of its dominant composition component
+    (i.e. argmax of the comp_<class> columns). Rows with no composition data
+    or missing images are filtered out.
+    """
+    df = pd.read_csv(images_csv)
+
+    comp_cols = [f"comp_{cls}" for cls in final_classes]
+    missing_cols = [c for c in comp_cols if c not in df.columns]
+    if missing_cols:
+        raise ValueError(
+            f"Composition columns missing from {images_csv}: {missing_cols}. "
+            f"Re-run 01_data_prep.py to generate them."
+        )
+
+    n_total = len(df)
+    df = df[df[comp_cols].sum(axis=1) > 0].copy()
+    n_dropped = n_total - len(df)
+    if n_dropped > 0:
+        log.info(f"Skipped {n_dropped} rows with no composition data")
+
+    if require_files_exist:
+        n_before = len(df)
+        df = df[df["image_exists"]].copy()
+        n_missing = n_before - len(df)
+        if n_missing > 0:
+            log.warning(f"Skipped {n_missing} rows whose image files are missing")
+
+    comp_arr = df[comp_cols].values
+    primary_idx = comp_arr.argmax(axis=1)  # index of dominant component per row
+
+    samples = [
+        MulticlassSample(
+            image_path=row["image_path"],
+            label=int(primary_idx[i]),
+            binary_label=LABEL_TO_INT.get(row["label"], 0),
+            stone_id=row["fragment"],
+            class_name=final_classes[primary_idx[i]],
+        )
+        for i, (_, row) in enumerate(df.iterrows())
+    ]
+
+    # Log class distribution
+    from collections import Counter
+    counts = Counter(s.class_name for s in samples)
+    log.info(
+        f"Built {len(samples)} multiclass samples from "
+        f"{df['fragment'].nunique()} stones. "
+        f"Primary component distribution: "
+        + ", ".join(f"{cls}={counts.get(cls, 0)}" for cls in final_classes)
+    )
+    return samples
+
+
+def make_multiclass_dataloader(
+    samples: list[MulticlassSample],
+    indices: list[int],
+    cfg: dict,
+    train: bool,
+) -> DataLoader:
+    """Build a DataLoader for multiclass primary-component classification."""
+    subset = [samples[i] for i in indices]
+    transform = build_transforms(cfg, train=train)
+    dataset = MulticlassKidneyStoneDataset(subset, transform)
+    tcfg = cfg["training"]
     return DataLoader(
         dataset,
         batch_size=tcfg["batch_size"],

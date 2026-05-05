@@ -229,8 +229,8 @@ def evaluate_fold_moe(
     device: torch.device,
     fold_dir: Path,
     class_names: list[str],
-    model_type: str = "parallel",
-) -> tuple[dict, pd.DataFrame]:
+    model_type: str = "simple",
+) -> tuple[dict, pd.DataFrame, pd.DataFrame]:
     """Load best checkpoint and evaluate on the given sample indices."""
     ckpt_path = fold_dir / f"best_{model_type}.pt"
     if not ckpt_path.exists():
@@ -295,7 +295,7 @@ def evaluate_fold_moe(
             for c in class_names
         )
     )
-    return metrics, stone_df
+    return metrics, stone_df, img_df
 
 
 # -----------------------------------------------------------------------------
@@ -435,8 +435,8 @@ def plot_primary_confusion(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fold", type=int, default=None, help="Evaluate only this fold")
-    parser.add_argument("--model", choices=["parallel", "simple"], default="parallel",
-                        help="parallel = expert heads (default), simple = single shared head")
+    parser.add_argument("--model", choices=["parallel", "simple"], default="simple",
+                        help="simple = single shared head (default), parallel = expert heads")
     args = parser.parse_args()
     model_type = args.model
 
@@ -445,7 +445,7 @@ def main() -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    requested = cfg["training_moe"]["device"]
+    requested = cfg["training_composition"]["device"]
     if requested == "mps" and torch.backends.mps.is_available():
         device = torch.device("mps")
     elif requested == "cuda" and torch.cuda.is_available():
@@ -473,7 +473,7 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
-    ckpt_key  = "checkpoints_simple_dir" if model_type == "simple" else "checkpoints_moe_dir"
+    ckpt_key  = "checkpoints_composition_dir"
     ckpt_dir  = resolve_path(cfg, ckpt_key)
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir    = ensure_dir(resolve_path(cfg, "logs_dir"))
@@ -486,16 +486,18 @@ def main() -> None:
     # -------------------------------------------------------------------------
     all_metrics:   list[dict]         = []
     all_stone_dfs: list[pd.DataFrame] = []
+    all_img_dfs:   list[pd.DataFrame] = []
 
     for fold_i in fold_range:
         _, val_idx = folds[fold_i]
         fold_dir = ckpt_dir / f"fold_{fold_i}"
-        metrics, stone_df = evaluate_fold_moe(
+        metrics, stone_df, img_df = evaluate_fold_moe(
             fold_i, train_val_samples, val_idx, cfg, device, fold_dir,
             final_classes, model_type=model_type,
         )
         all_metrics.append(metrics)
         all_stone_dfs.append(stone_df)
+        all_img_dfs.append(img_df)
 
     all_stones = pd.concat(all_stone_dfs, ignore_index=True)
     all_stones.to_csv(logs_dir / f"eval_{p}_stone_predictions.csv", index=False)
@@ -545,7 +547,7 @@ def main() -> None:
 
     for fold_i in fold_range:
         fold_dir = ckpt_dir / f"fold_{fold_i}"
-        t_metrics, t_stone_df = evaluate_fold_moe(
+        t_metrics, t_stone_df, _ = evaluate_fold_moe(
             fold_i, all_samples, test_idx, cfg, device, fold_dir,
             final_classes, model_type=model_type,
         )
@@ -597,6 +599,119 @@ def main() -> None:
         plot_primary_confusion(test_agg, final_classes,
                                figures_dir / f"{p}_primary_confusion_test.png",
                                title=f"Primary component — predicted vs true (held-out test set) [{p}]")
+
+    # -------------------------------------------------------------------------
+    # Within-stone prediction variance (3.1)
+    # -------------------------------------------------------------------------
+    if all_img_dfs:
+        all_imgs = pd.concat(all_img_dfs, ignore_index=True)
+        pred_cols = [f"pred_{c}" for c in final_classes]
+        within_std = all_imgs.groupby("stone_id")[pred_cols].std()
+        within_variance = pd.DataFrame({
+            "mean_std_per_class": within_std.mean(axis=1),
+            **{f"std_{c}": within_std[f"pred_{c}"] for c in final_classes},
+        })
+        within_variance.to_csv(logs_dir / "within_stone_variance.csv")
+        log.info(
+            f"Within-stone prediction std (mean across classes): "
+            f"{within_variance['mean_std_per_class'].mean():.4f}"
+        )
+        log.info(f"Saved: {logs_dir / 'within_stone_variance.csv'}")
+
+    # -------------------------------------------------------------------------
+    # Baselines (2.1) — evaluated on test set
+    # -------------------------------------------------------------------------
+    if test_metrics_all:
+        true_cols = [f"true_{c}" for c in final_classes]
+        pred_cols = [f"pred_{c}" for c in final_classes]
+
+        # Training composition vectors (all train_val stones)
+        train_comps = np.array([s.composition for s in train_val_samples])
+        mean_comp   = train_comps.mean(axis=0)
+        mean_comp  /= mean_comp.sum()  # ensure sums to 1
+
+        true_arr = test_agg[true_cols].values
+
+        # Baseline 1: always predict the training-set mean composition
+        mean_pred = np.tile(mean_comp, (len(true_arr), 1))
+        b1 = compute_moe_metrics(mean_pred, true_arr, final_classes, prefix="b1_")
+
+        # Baseline 2: argmax one-hot (perfect dominant class, no minor components)
+        onehot_pred = np.zeros_like(true_arr)
+        onehot_pred[np.arange(len(true_arr)), true_arr.argmax(axis=1)] = 1.0
+        b2 = compute_moe_metrics(onehot_pred, true_arr, final_classes, prefix="b2_")
+
+        baselines_df = pd.DataFrame([
+            {"baseline": "dataset_mean",  **{k[3:]: v for k, v in b1.items()}},
+            {"baseline": "primary_onehot", **{k[3:]: v for k, v in b2.items()}},
+        ])
+        baselines_df.to_csv(logs_dir / "eval_baselines.csv", index=False)
+        log.info("Baselines (test set):")
+        log.info(f"  Dataset mean  — MAE={b1['b1_mae_overall']:.4f}  "
+                 f"dom_acc={b1['b1_dominant_acc']:.3f}  "
+                 f"aitchison={b1['b1_aitchison']:.4f}")
+        log.info(f"  Primary onehot — MAE={b2['b2_mae_overall']:.4f}  "
+                 f"dom_acc={b2['b2_dominant_acc']:.3f}  "
+                 f"aitchison={b2['b2_aitchison']:.4f}")
+        log.info(f"Saved: {logs_dir / 'eval_baselines.csv'}")
+
+    # -------------------------------------------------------------------------
+    # Derived predictions + cross-model comparison (2.2, 5.2)
+    # -------------------------------------------------------------------------
+    if test_metrics_all:
+        purity_threshold = cfg["data"]["purity_threshold"] / 100.0
+
+        # Derive binary pure/mixed from Model B composition output
+        pred_arr = test_agg[pred_cols].values
+        max_frac = pred_arr.max(axis=1)
+        derived_binary = (max_frac < purity_threshold).astype(int)  # 1=mixed, 0=pure
+
+        comparison_rows = []
+
+        # Compare with Model A binary predictions (if available)
+        model_a_path = logs_dir / "eval_test_stone_predictions.csv"
+        if model_a_path.exists():
+            from sklearn.metrics import f1_score as _f1, accuracy_score as _acc
+            model_a = pd.read_csv(model_a_path).set_index("stone_id")
+            common = test_agg["stone_id"].values
+            a_true  = model_a.loc[common, "label"].values
+            a_pred  = model_a.loc[common, "pred"].values
+            b_binary_true = test_agg.set_index("stone_id").loc[common, "label"].values
+
+            model_a_f1   = _f1(a_true, a_pred, zero_division=0)
+            derived_b_f1 = _f1(b_binary_true, derived_binary, zero_division=0)
+            comparison_rows.append({
+                "comparison": "binary_pure_mixed",
+                "model_a_f1":         model_a_f1,
+                "model_b_derived_f1": derived_b_f1,
+            })
+            log.info(f"Model A binary F1:          {model_a_f1:.3f}")
+            log.info(f"Model B derived binary F1:  {derived_b_f1:.3f}")
+
+        # Compare with Model C dominant-class predictions (if available)
+        model_c_path = logs_dir / "eval_test_stone_predictions_multiclass.csv"
+        if model_c_path.exists():
+            model_c   = pd.read_csv(model_c_path).set_index("stone_id")
+            common_mc = [s for s in test_agg["stone_id"].values if s in model_c.index]
+            c_true     = model_c.loc[common_mc, "label"].values
+            c_pred     = model_c.loc[common_mc, "pred"].values
+            b_dom_true = test_agg.set_index("stone_id").loc[common_mc, true_cols].values.argmax(axis=1)
+            b_dom_pred = test_agg.set_index("stone_id").loc[common_mc, pred_cols].values.argmax(axis=1)
+
+            from sklearn.metrics import f1_score as _f1, accuracy_score as _acc
+            model_c_acc   = _acc(c_true, c_pred)
+            derived_b_acc = _acc(b_dom_true, b_dom_pred)
+            comparison_rows.append({
+                "comparison":           "dominant_component",
+                "model_c_accuracy":     model_c_acc,
+                "model_b_derived_acc":  derived_b_acc,
+            })
+            log.info(f"Model C dominant accuracy:          {model_c_acc:.3f}")
+            log.info(f"Model B derived dominant accuracy:  {derived_b_acc:.3f}")
+
+        if comparison_rows:
+            pd.DataFrame(comparison_rows).to_csv(logs_dir / "model_comparison.csv", index=False)
+            log.info(f"Saved: {logs_dir / 'model_comparison.csv'}")
 
     log.info(f"Evaluation complete ({model_type}).")
 

@@ -17,8 +17,8 @@ paths:
   figures_dir: "outputs/figures"
   checkpoints_dir: "outputs/checkpoints"
   checkpoints_frozen_dir: "outputs/checkpoints_frozen"
-  checkpoints_moe_dir: "outputs/checkpoints_composition"
-  checkpoints_simple_dir: "outputs/checkpoints_simple"
+  checkpoints_composition_dir: "outputs/checkpoints_composition"
+  checkpoints_multiclass_dir: "outputs/checkpoints_multiclass"
   logs_dir: "outputs/logs"
   processed_csv: "data/processed/stones_labeled.csv"
   processed_images_csv: "data/processed/images_labeled.csv"
@@ -82,6 +82,7 @@ class_remapping:
   # ---- Stage 1: OTH subtype remapping ----
   # Spelling variants in the Excel `oth_detail` column → normalized name
   oth_spelling_normalization:
+    "ca(6x)mg(x)(po)4 nativ": "Ca-Mg phosphate"
     "Natriumhydrogeenuraathydraat": "Na-H-urate hydrate"
     "Natriumhydrogenuraathydraat": "Na-H-urate hydrate"
     "Natriumhydrogenurat-hydrat": "Na-H-urate hydrate"
@@ -202,6 +203,19 @@ evaluation:
     - "confusion_matrix"
 
 # -----------------------------------------------------------------------------
+# Model C — Multi-class primary component classification
+# -----------------------------------------------------------------------------
+# Predicts which of the 6 final classes is the dominant (primary) component.
+# Uses the same StoneClassifier backbone as Model A, but with num_classes=6
+# and cross-entropy loss.
+# -----------------------------------------------------------------------------
+model_multiclass:
+  backbone: "resnet50"
+  pretrained_weights: "IMAGENET1K_V2"
+  num_classes: 6      # one per final_class (CaOx, CHP, UA, MAP, CYS, OTH)
+  dropout: 0.3
+
+# -----------------------------------------------------------------------------
 # Model B — Compositional regression with multi-label detection
 # -----------------------------------------------------------------------------
 model_composition:
@@ -215,7 +229,7 @@ model_composition:
   warm_start_from: null
   purity_model_checkpoint: null
 
-training_moe:
+training_composition:
   device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
   batch_size: 32
   num_workers: 4
@@ -229,5 +243,19 @@ training_moe:
   aux_loss_weight: 0.3    # weight for presence/absence detection BCE loss
   presence_threshold: 0.05  # fraction threshold to define class as "present"
 
-evaluation_moe:
+evaluation_composition:
   stone_level_aggregation: "mean_composition"
+
+# -----------------------------------------------------------------------------
+# Model C — Training hyperparameters (multi-class primary component)
+# -----------------------------------------------------------------------------
+training_multiclass:
+  device: "cuda"
+  batch_size: 32
+  num_workers: 4
+  epochs_frozen: 5
+  epochs_finetune: 20
+  learning_rate_head: 0.001
+  learning_rate_backbone: 0.0001
+  weight_decay: 0.0001
+  early_stopping_patience: 5

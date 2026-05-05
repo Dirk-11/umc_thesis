@@ -150,8 +150,9 @@ def train_one_epoch(
     presence_threshold: float,
 ) -> dict:
     model.train()
-    running_comp_loss = 0.0
-    running_aux_loss = 0.0
+    running_comp_loss  = 0.0
+    running_aux_loss   = 0.0
+    running_total_loss = 0.0
     total = 0
 
     for images, comp_targets, _stone_ids, _labels in loader:
@@ -171,13 +172,15 @@ def train_one_epoch(
         loss.backward()
         optimizer.step()
 
-        running_comp_loss += comp_loss.item() * images.size(0)
-        running_aux_loss += aux_loss.item() * images.size(0)
+        running_comp_loss  += comp_loss.item() * images.size(0)
+        running_aux_loss   += aux_loss.item() * images.size(0)
+        running_total_loss += loss.item() * images.size(0)
         total += images.size(0)
 
     return {
-        "loss": running_comp_loss / total,
-        "aux_loss": running_aux_loss / total,
+        "comp_loss":  running_comp_loss  / total,
+        "aux_loss":   running_aux_loss   / total,
+        "total_loss": running_total_loss / total,
     }
 
 
@@ -282,11 +285,11 @@ def train_one_fold(
         model = model_module.build_simple_composition_model(cfg).to(device)
     else:
         model = model_module.build_composition_model(cfg).to(device)
-    criterion = make_criterion(cfg["training_moe"]["loss"])
+    criterion = make_criterion(cfg["training_composition"]["loss"])
     class_names = cfg["class_remapping"]["final_classes"]
-    aggregation = cfg["evaluation_moe"]["stone_level_aggregation"]
+    aggregation = cfg["evaluation_composition"]["stone_level_aggregation"]
 
-    tcfg = cfg["training_moe"]
+    tcfg = cfg["training_composition"]
     epochs_frozen   = 2 if quick else tcfg["epochs_frozen"]
     epochs_finetune = 2 if quick else tcfg["epochs_finetune"]
     patience           = tcfg["early_stopping_patience"]
@@ -317,16 +320,17 @@ def train_one_fold(
             row = {
                 "fold": fold_i, "phase": phase_name,
                 "epoch": global_epoch, "phase_epoch": epoch,
-                "train_loss": train_m["loss"],
-                "train_aux_loss": train_m["aux_loss"],
+                "train_comp_loss":  train_m["comp_loss"],
+                "train_aux_loss":   train_m["aux_loss"],
+                "train_total_loss": train_m["total_loss"],
                 **{f"val_{k}": v for k, v in val_m.items()},
                 "seconds": round(elapsed, 1),
             }
             history.append(row)
             log.info(
                 f"  [{phase_name}] epoch {epoch+1}/{n_epochs} | "
-                f"train_loss={train_m['loss']:.4f} | "
-                f"train_aux={train_m['aux_loss']:.4f} | "
+                f"train_total={train_m['total_loss']:.4f} "
+                f"(comp={train_m['comp_loss']:.4f} aux={train_m['aux_loss']:.4f}) | "
                 f"val_loss={val_m['loss']:.4f} | "
                 f"val_stone_mae={val_m['stone_mae_overall']:.4f} | "
                 f"val_stone_dom_acc={val_m['stone_dominant_acc']:.3f} | "
@@ -370,10 +374,11 @@ def train_one_fold(
         model.unfreeze_backbone()
         log.info(f"  Trainable params: {model.trainable_param_count():,}")
         optimizer = torch.optim.Adam([
-            {"params": model.backbone_parameters(),    "lr": tcfg["learning_rate_backbone"]},
-            {"params": list(model.head_parameters()), "lr": tcfg["learning_rate_head"]},
+            {"params": model.backbone_parameters(),  "lr": tcfg["learning_rate_backbone"]},
+            {"params": model.head_parameters(),      "lr": tcfg["learning_rate_head"]},
         ], weight_decay=tcfg["weight_decay"])
         epochs_since_best = 0
+        best_val_loss = float("inf")
         run_phase("finetune", epochs_finetune, optimizer)
 
     pd.DataFrame(history).to_csv(fold_dir / f"history_{model_type}.csv", index=False)
@@ -403,8 +408,8 @@ def main() -> None:
     parser.add_argument("--fold",  type=int,  default=None,  help="Run only this fold")
     parser.add_argument("--quick", action="store_true",
                         help="2 epochs per phase (smoke test)")
-    parser.add_argument("--model", choices=["parallel", "simple"], default="parallel",
-                        help="parallel = expert heads per class (default), simple = single shared head")
+    parser.add_argument("--model", choices=["parallel", "simple"], default="simple",
+                        help="simple = single shared head (default), parallel = expert heads per class")
     args = parser.parse_args()
     model_type = args.model
 
@@ -413,7 +418,7 @@ def main() -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    device = resolve_device(cfg["training_moe"]["device"])
+    device = resolve_device(cfg["training_composition"]["device"])
     log.info(f"Device: {device}")
 
     # Load compositional samples
@@ -438,7 +443,7 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
-    ckpt_key  = "checkpoints_simple_dir" if model_type == "simple" else "checkpoints_moe_dir"
+    ckpt_key  = "checkpoints_composition_dir"
     ckpt_dir  = ensure_dir(resolve_path(cfg, ckpt_key))
     logs_dir  = ensure_dir(resolve_path(cfg, "logs_dir"))
     log.info(f"Model type: {model_type}  |  checkpoints → {ckpt_dir}")
@@ -484,8 +489,8 @@ def main() -> None:
     # -------------------------------------------------------------------------
     log.info("=== Held-out test set evaluation ===")
     model_module = import_module("04_model_composition")
-    criterion    = make_criterion(cfg["training_moe"]["loss"])
-    aggregation  = cfg["evaluation_moe"]["stone_level_aggregation"]
+    criterion    = make_criterion(cfg["training_composition"]["loss"])
+    aggregation  = cfg["evaluation_composition"]["stone_level_aggregation"]
     test_loader  = ds_module.make_compositional_dataloader(
         all_samples, test_idx, cfg, train=False
     )

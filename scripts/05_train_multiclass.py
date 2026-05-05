@@ -1,27 +1,23 @@
 """
-05_train.py — Train ResNet50 (or configured backbone) for pure/mixed classification.
+05_train_multiclass.py — Train a 6-class classifier for primary component prediction (Model C).
 
-Training scheme (staged fine-tuning):
-  Phase 1: Freeze backbone, train head only, for N1 epochs (warm-up)
-  Phase 2: Unfreeze backbone, fine-tune end-to-end at lower LR, for N2 epochs
+The target label for each stone is the argmax of its composition vector — i.e.
+whichever of the 6 final classes (CaOx, CHP, UA, MAP, CYS, OTH) makes up the
+largest fraction. Loss is standard cross-entropy.
 
-Per-fold flow:
-  - Build train/val DataLoaders for this fold
-  - Run Phase 1 + Phase 2 with early stopping on val loss
-  - Aggregate per-image predictions to per-stone predictions for "real" metrics
-  - Save best checkpoint + per-epoch metrics CSV
-  - Save fold-level summary
+Training scheme (same staged fine-tuning as Models A and B):
+  Phase 1: Freeze backbone, train head only for N epochs (warm-up)
+  Phase 2: Unfreeze backbone, fine-tune end-to-end at lower LR for N epochs
 
-After all folds: write a cross-fold summary (mean ± std of val metrics).
+Metrics:
+  - Image-level and stone-level accuracy
+  - Macro F1 (unweighted average across 6 classes)
+  - Per-class F1
 
 Usage:
-  python scripts/05_train.py                  # runs all folds (full fine-tuning)
-  python scripts/05_train.py --fold 0         # single fold only (for dev/debug)
-  python scripts/05_train.py --quick          # 2 epochs per phase, for smoke test
-  python scripts/05_train.py --no-finetune    # frozen backbone baseline (Phase 1 only)
-
-The image files must exist for this to run. Run 01_data_prep.py first to
-verify everything is in place.
+  python scripts/05_train_multiclass.py              # all folds
+  python scripts/05_train_multiclass.py --fold 0     # single fold
+  python scripts/05_train_multiclass.py --quick      # 2 epochs/phase (smoke test)
 """
 from __future__ import annotations
 
@@ -37,31 +33,23 @@ import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from sklearn.metrics import (
-    accuracy_score, f1_score, precision_score, recall_score, roc_auc_score,
-)
+from sklearn.metrics import accuracy_score, f1_score
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
-log = setup_logging("train")
+log = setup_logging("train_multiclass")
 
 
 # -----------------------------------------------------------------------------
 # Device
 # -----------------------------------------------------------------------------
 def resolve_device(requested: str) -> torch.device:
-    """Check the requested device is actually available and fall back gracefully."""
-    if requested == "mps":
-        if torch.backends.mps.is_available():
-            return torch.device("mps")
-        log.warning("MPS requested but not available — falling back to CPU")
-        return torch.device("cpu")
-    if requested == "cuda":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        log.warning("CUDA requested but not available — falling back to CPU")
-        return torch.device("cpu")
+    if requested == "mps" and torch.backends.mps.is_available():
+        return torch.device("mps")
+    if requested == "cuda" and torch.cuda.is_available():
+        return torch.device("cuda")
+    log.warning(f"{requested.upper()} not available — falling back to CPU")
     return torch.device("cpu")
 
 
@@ -93,10 +81,7 @@ def train_one_epoch(
         total += images.size(0)
         correct += (logits.argmax(dim=1) == labels).sum().item()
 
-    return {
-        "loss": running_loss / total,
-        "img_accuracy": correct / total,
-    }
+    return {"loss": running_loss / total, "img_accuracy": correct / total}
 
 
 @torch.no_grad()
@@ -105,22 +90,16 @@ def evaluate(
     loader: DataLoader,
     criterion: nn.Module,
     device: torch.device,
-    aggregation: str = "mean_probability",
+    class_names: list[str],
 ) -> dict:
-    """Evaluate with BOTH image-level and stone-level metrics.
-
-    For the stone-level metric, we aggregate the 3 photos of each stone into
-    one prediction. This is the metric that actually matters clinically —
-    the 3 photos represent different views of the same stone.
-    """
+    """Evaluate image-level and stone-level metrics."""
     model.eval()
     running_loss = 0.0
     total = 0
 
-    # Image-level buffers
     all_labels: list[int] = []
     all_preds: list[int] = []
-    all_probs: list[float] = []
+    all_probs: list[list[float]] = []
     all_stone_ids: list[str] = []
 
     for images, labels, stone_ids in loader:
@@ -132,55 +111,48 @@ def evaluate(
         running_loss += loss.item() * images.size(0)
         total += images.size(0)
 
-        probs = torch.softmax(logits, dim=1)[:, 1]  # P(mixed)
-        preds = logits.argmax(dim=1)
+        probs = torch.softmax(logits, dim=1).cpu().tolist()
+        preds = logits.argmax(dim=1).cpu().tolist()
 
         all_labels.extend(labels.tolist())
-        all_preds.extend(preds.cpu().tolist())
-        all_probs.extend(probs.cpu().tolist())
+        all_preds.extend(preds)
+        all_probs.extend(probs)
         all_stone_ids.extend(list(stone_ids))
 
-    # --- Image-level metrics ---
     img_metrics = {
         "loss": running_loss / total,
         "accuracy": accuracy_score(all_labels, all_preds),
-        "precision": precision_score(all_labels, all_preds, zero_division=0),
-        "recall": recall_score(all_labels, all_preds, zero_division=0),
-        "f1": f1_score(all_labels, all_preds, zero_division=0),
+        "macro_f1": f1_score(all_labels, all_preds, average="macro", zero_division=0),
     }
-    if len(set(all_labels)) > 1:
-        img_metrics["roc_auc"] = roc_auc_score(all_labels, all_probs)
 
-    # --- Stone-level aggregation ---
-    eval_df = pd.DataFrame({
+    # Stone-level: average class probabilities across the 3 images, then argmax
+    df = pd.DataFrame({
         "stone_id": all_stone_ids,
         "label": all_labels,
-        "pred": all_preds,
-        "prob_mixed": all_probs,
+        **{f"prob_{c}": [p[i] for p in all_probs] for i, c in enumerate(class_names)},
     })
-    if aggregation == "mean_probability":
-        stone_df = eval_df.groupby("stone_id").agg(
-            label=("label", "first"),          # all 3 photos share one label
-            prob_mixed=("prob_mixed", "mean"),
-        ).reset_index()
-        stone_df["pred"] = (stone_df["prob_mixed"] >= 0.5).astype(int)
-    elif aggregation == "majority_vote":
-        stone_df = eval_df.groupby("stone_id").agg(
-            label=("label", "first"),
-            pred=("pred", lambda s: int(s.mode().iloc[0])),
-            prob_mixed=("prob_mixed", "mean"),
-        ).reset_index()
-    else:
-        raise ValueError(f"Unknown aggregation: {aggregation}")
+    prob_cols = [f"prob_{c}" for c in class_names]
+    stone_df = df.groupby("stone_id").agg(
+        label=("label", "first"),
+        **{col: (col, "mean") for col in prob_cols},
+    ).reset_index()
+    stone_df["pred"] = stone_df[prob_cols].values.argmax(axis=1)
 
     stone_metrics = {
         "stone_accuracy": accuracy_score(stone_df["label"], stone_df["pred"]),
-        "stone_precision": precision_score(stone_df["label"], stone_df["pred"], zero_division=0),
-        "stone_recall": recall_score(stone_df["label"], stone_df["pred"], zero_division=0),
-        "stone_f1": f1_score(stone_df["label"], stone_df["pred"], zero_division=0),
+        "stone_macro_f1": f1_score(
+            stone_df["label"], stone_df["pred"], average="macro", zero_division=0
+        ),
     }
-    if stone_df["label"].nunique() > 1:
-        stone_metrics["stone_roc_auc"] = roc_auc_score(stone_df["label"], stone_df["prob_mixed"])
+    # Per-class F1 at stone level
+    per_class_f1 = f1_score(
+        stone_df["label"], stone_df["pred"],
+        labels=list(range(len(class_names))),
+        average=None,
+        zero_division=0,
+    )
+    for cls, f1_val in zip(class_names, per_class_f1):
+        stone_metrics[f"stone_f1_{cls}"] = float(f1_val)
 
     return {**img_metrics, **stone_metrics}
 
@@ -196,24 +168,40 @@ def train_one_fold(
     cfg: dict,
     device: torch.device,
     fold_dir: Path,
+    class_names: list[str],
     quick: bool = False,
-    no_finetune: bool = False,
 ) -> dict:
-    """Train a single fold end-to-end and return best-epoch metrics."""
     ensure_dir(fold_dir)
 
-    # Lazy imports to avoid loading heavy modules at script import time
-    ds = import_module("03_dataset")
-    model_module = import_module("04_model_binary")
+    ds_module    = import_module("03_dataset")
+    model_module = import_module("04_model_binary")  # StoneClassifier is generic
 
-    train_loader = ds.make_dataloader(samples, train_idx, cfg, train=True)
-    val_loader = ds.make_dataloader(samples, val_idx, cfg, train=False)
+    train_loader = ds_module.make_multiclass_dataloader(samples, train_idx, cfg, train=True)
+    val_loader   = ds_module.make_multiclass_dataloader(samples, val_idx,   cfg, train=False)
 
-    model = model_module.build_model(cfg).to(device)
-    criterion = nn.CrossEntropyLoss()
+    # Build model from model_multiclass config section
+    mc = cfg["model_multiclass"]
+    model = model_module.StoneClassifier(
+        backbone_name=mc["backbone"],
+        weights=mc["pretrained_weights"],
+        num_classes=mc["num_classes"],
+        dropout=mc["dropout"],
+    ).to(device)
 
-    tcfg = cfg["training"]
-    epochs_frozen = 2 if quick else tcfg["epochs_frozen"]
+    # Class-weighted loss to handle imbalance (CaOx=128, OTH=4)
+    from collections import Counter
+    train_labels = [samples[i].label for i in train_idx]
+    counts = Counter(train_labels)
+    n_train = len(train_labels)
+    n_classes = len(class_names)
+    class_weights = torch.tensor(
+        [n_train / (n_classes * counts.get(i, 1)) for i in range(n_classes)],
+        dtype=torch.float32,
+    ).to(device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+    tcfg = cfg["training_multiclass"]
+    epochs_frozen   = 2 if quick else tcfg["epochs_frozen"]
     epochs_finetune = 2 if quick else tcfg["epochs_finetune"]
     patience = tcfg["early_stopping_patience"]
 
@@ -225,59 +213,54 @@ def train_one_fold(
     best_ckpt_path = fold_dir / "best.pt"
 
     def run_phase(phase_name: str, n_epochs: int, optimizer: torch.optim.Optimizer) -> bool:
-        """Run a training phase. Returns True if early-stopped."""
         nonlocal best_val_loss, best_epoch, best_metrics, epochs_since_best
 
         for epoch in range(n_epochs):
             t0 = time.time()
-            train_metrics = train_one_epoch(model, train_loader, optimizer, criterion, device)
-            val_metrics = evaluate(
-                model, val_loader, criterion, device,
-                aggregation=cfg["evaluation"]["stone_level_aggregation"],
-            )
+            train_m = train_one_epoch(model, train_loader, optimizer, criterion, device)
+            val_m   = evaluate(model, val_loader, criterion, device, class_names)
             elapsed = time.time() - t0
 
             global_epoch = len(history)
             row = {
-                "fold": fold_i,
-                "phase": phase_name,
-                "epoch": global_epoch,
-                "phase_epoch": epoch,
-                "train_loss": train_metrics["loss"],
-                "train_img_acc": train_metrics["img_accuracy"],
-                **{f"val_{k}": v for k, v in val_metrics.items()},
+                "fold": fold_i, "phase": phase_name,
+                "epoch": global_epoch, "phase_epoch": epoch,
+                "train_loss": train_m["loss"],
+                "train_img_acc": train_m["img_accuracy"],
+                **{f"val_{k}": v for k, v in val_m.items()},
                 "seconds": round(elapsed, 1),
             }
             history.append(row)
             log.info(
                 f"  [{phase_name}] epoch {epoch+1}/{n_epochs} | "
-                f"train_loss={train_metrics['loss']:.4f} | "
-                f"val_loss={val_metrics['loss']:.4f} | "
-                f"val_stone_acc={val_metrics['stone_accuracy']:.3f} | "
-                f"val_stone_f1={val_metrics['stone_f1']:.3f} | "
+                f"train_loss={train_m['loss']:.4f} | "
+                f"val_loss={val_m['loss']:.4f} | "
+                f"val_stone_acc={val_m['stone_accuracy']:.3f} | "
+                f"val_stone_macro_f1={val_m['stone_macro_f1']:.3f} | "
                 f"{elapsed:.0f}s"
             )
 
-            if val_metrics["loss"] < best_val_loss:
-                best_val_loss = val_metrics["loss"]
+            if val_m["loss"] < best_val_loss:
+                best_val_loss = val_m["loss"]
                 best_epoch = global_epoch
-                best_metrics = val_metrics.copy()
+                best_metrics = val_m.copy()
                 epochs_since_best = 0
                 torch.save({
                     "model_state": model.state_dict(),
                     "config": cfg,
                     "fold": fold_i,
                     "epoch": global_epoch,
-                    "val_metrics": val_metrics,
+                    "val_metrics": val_m,
+                    "class_names": class_names,
                 }, best_ckpt_path)
             else:
                 epochs_since_best += 1
                 if epochs_since_best >= patience:
-                    log.info(f"  Early stopping (no improvement for {patience} epochs)")
+                    log.info(f"  Early stopping ({patience} epochs without improvement)")
                     return True
         return False
 
-    # Phase 1: frozen backbone, train head only
+    # Phase 1: frozen backbone
     log.info(f"Fold {fold_i} — Phase 1: frozen backbone, {epochs_frozen} epochs")
     model.freeze_backbone()
     log.info(f"  Trainable params: {model.trainable_param_count():,}")
@@ -288,24 +271,19 @@ def train_one_fold(
     )
     stopped = run_phase("frozen", epochs_frozen, optimizer)
 
-    # Phase 2: fine-tune whole model
-    if no_finetune:
-        log.info(f"Fold {fold_i} — Skipping Phase 2 (--no-finetune)")
-        stopped = True
+    # Phase 2: fine-tune full model
     if not stopped:
+        log.info(f"Fold {fold_i} — Phase 2: fine-tune, {epochs_finetune} epochs")
         model.unfreeze_backbone()
         log.info(f"  Trainable params: {model.trainable_param_count():,}")
-        # Two param groups so backbone gets a smaller LR than head
         optimizer = torch.optim.Adam([
             {"params": model.backbone_parameters(), "lr": tcfg["learning_rate_backbone"]},
             {"params": model.head_parameters(),     "lr": tcfg["learning_rate_head"]},
         ], weight_decay=tcfg["weight_decay"])
-        # Reset early-stopping counter and best loss for phase 2
         epochs_since_best = 0
         best_val_loss = float("inf")
         run_phase("finetune", epochs_finetune, optimizer)
 
-    # Save per-fold outputs
     pd.DataFrame(history).to_csv(fold_dir / "history.csv", index=False)
     fold_summary = {
         "fold": fold_i,
@@ -315,7 +293,11 @@ def train_one_fold(
     }
     with open(fold_dir / "summary.json", "w") as f:
         json.dump(fold_summary, f, indent=2)
-    log.info(f"Fold {fold_i} done. Best val_loss={best_val_loss:.4f} at epoch {best_epoch}")
+    log.info(
+        f"Fold {fold_i} done. best_val_loss={best_val_loss:.4f} | "
+        f"stone_acc={best_metrics.get('stone_accuracy', float('nan')):.3f} | "
+        f"stone_macro_f1={best_metrics.get('stone_macro_f1', float('nan')):.3f}"
+    )
     return fold_summary
 
 
@@ -324,60 +306,65 @@ def train_one_fold(
 # -----------------------------------------------------------------------------
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--fold", type=int, default=None, help="Run only this fold")
+    parser.add_argument("--fold",  type=int,  default=None)
     parser.add_argument("--quick", action="store_true",
-                        help="2 epochs per phase, for smoke testing")
-    parser.add_argument("--no-finetune", action="store_true",
-                        help="Skip Phase 2 (frozen backbone baseline). "
-                             "Saves checkpoints to checkpoints_frozen/ instead of checkpoints/.")
+                        help="2 epochs per phase (smoke test)")
     args = parser.parse_args()
 
-    cfg = load_config()
-
-    # Set seeds
+    cfg  = load_config()
     seed = cfg["project"]["seed"]
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    device = resolve_device(cfg["training"]["device"])
+    device = resolve_device(cfg["training_multiclass"]["device"])
     log.info(f"Device: {device}")
 
-    # Build samples
-    ds = import_module("03_dataset")
+    class_names = cfg["class_remapping"]["final_classes"]
+    log.info(f"Classes ({len(class_names)}): {class_names}")
+
+    ds_module  = import_module("03_dataset")
     images_csv = resolve_path(cfg, "processed_images_csv")
-    all_samples = ds.load_image_samples(images_csv, require_files_exist=True)
+    all_samples = ds_module.load_multiclass_samples(
+        images_csv, class_names, require_files_exist=True
+    )
 
-    # Hold out test set before CV
+    # Stratify on binary pure/mixed labels to produce the same folds as Models A and B
+    binary_labels = [s.binary_label for s in all_samples]
+
+    # Hold out test set — same split as Models A and B
     test_fraction = cfg["cv"]["test_fraction"]
-    train_val_idx, test_idx = ds.make_test_holdout(all_samples, test_fraction, seed)
+    train_val_idx, test_idx = ds_module.make_test_holdout(
+        all_samples, test_fraction, seed, stratify_labels=binary_labels
+    )
     train_val_samples = [all_samples[i] for i in train_val_idx]
+    train_val_binary  = [binary_labels[i] for i in train_val_idx]
 
-    folds = ds.make_stratified_folds(
+    # Folds — same stratification as Models A and B
+    folds = ds_module.make_stratified_folds(
         train_val_samples,
         n_folds=cfg["cv"]["n_folds"],
         seed=seed,
         shuffle=cfg["cv"]["shuffle"],
+        stratify_labels=train_val_binary,
     )
 
-    ckpt_key = "checkpoints_frozen_dir" if args.no_finetune else "checkpoints_dir"
-    ckpt_dir = ensure_dir(resolve_path(cfg, ckpt_key))
+    ckpt_dir = ensure_dir(resolve_path(cfg, "checkpoints_multiclass_dir"))
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
-    # Run folds (indices are into train_val_samples)
-    all_summaries: list[dict] = []
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
+    all_summaries: list[dict] = []
+
     for fold_i in fold_range:
         train_idx, val_idx = folds[fold_i]
         fold_dir = ckpt_dir / f"fold_{fold_i}"
+        log.info(f"=== Fold {fold_i} ===")
         summary = train_one_fold(
             fold_i, train_val_samples, train_idx, val_idx,
-            cfg, device, fold_dir, quick=args.quick,
-            no_finetune=args.no_finetune,
+            cfg, device, fold_dir, class_names, quick=args.quick,
         )
         all_summaries.append(summary)
 
-    # Cross-fold aggregate (only meaningful when running all folds)
-    suffix = "_frozen" if args.no_finetune else ""
+    # Cross-fold aggregate
     if args.fold is None and len(all_summaries) > 1:
         df = pd.DataFrame(all_summaries)
         metric_cols = [c for c in df.columns if c.startswith("best_") and c != "best_epoch"]
@@ -385,54 +372,56 @@ def main() -> None:
             df[metric_cols].mean().rename("mean"),
             df[metric_cols].std().rename("std"),
         ], axis=1)
-        agg.to_csv(logs_dir / f"cv_summary{suffix}.csv")
-        df.to_csv(logs_dir / f"fold_summaries{suffix}.csv", index=False)
-        log.info("Cross-fold summary:")
-        for metric in ["best_val_stone_accuracy", "best_val_stone_f1"]:
+        agg.to_csv(logs_dir / "cv_summary_multiclass.csv")
+        df.to_csv(logs_dir / "fold_summaries_multiclass.csv", index=False)
+        log.info("Cross-fold results:")
+        for metric in ["best_stone_accuracy", "best_stone_macro_f1"]:
             if metric in agg.index:
                 log.info(f"  {metric}: {agg.at[metric, 'mean']:.3f} ± {agg.at[metric, 'std']:.3f}")
 
     # -------------------------------------------------------------------------
     # Held-out test set evaluation
-    # Evaluate each trained fold's best checkpoint on the test set and report
-    # the mean ± std — this is the unbiased final performance estimate.
     # -------------------------------------------------------------------------
     log.info("=== Held-out test set evaluation ===")
     model_module = import_module("04_model_binary")
-    criterion = nn.CrossEntropyLoss()
-    aggregation = cfg["evaluation"]["stone_level_aggregation"]
-    test_loader = ds.make_dataloader(all_samples, test_idx, cfg, train=False)
+    criterion    = nn.CrossEntropyLoss()
+    test_loader  = ds_module.make_multiclass_dataloader(all_samples, test_idx, cfg, train=False)
 
     test_fold_metrics: list[dict] = []
     for fold_i in fold_range:
         ckpt_path = ckpt_dir / f"fold_{fold_i}" / "best.pt"
         if not ckpt_path.exists():
-            log.warning(f"  Fold {fold_i}: checkpoint not found at {ckpt_path}, skipping")
+            log.warning(f"  Fold {fold_i}: checkpoint not found, skipping")
             continue
+        mc = cfg["model_multiclass"]
         checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
-        model = model_module.build_model(cfg).to(device)
+        model = model_module.StoneClassifier(
+            backbone_name=mc["backbone"],
+            weights=mc["pretrained_weights"],
+            num_classes=mc["num_classes"],
+            dropout=mc["dropout"],
+        ).to(device)
         model.load_state_dict(checkpoint["model_state"])
-        test_m = evaluate(model, test_loader, criterion, device, aggregation)
+        test_m = evaluate(model, test_loader, criterion, device, class_names)
         test_fold_metrics.append({"fold": fold_i, **test_m})
         log.info(
             f"  Fold {fold_i} test: "
             f"stone_acc={test_m['stone_accuracy']:.3f} | "
-            f"stone_f1={test_m['stone_f1']:.3f} | "
-            f"stone_roc_auc={test_m.get('stone_roc_auc', float('nan')):.3f}"
+            f"stone_macro_f1={test_m['stone_macro_f1']:.3f}"
         )
 
     if test_fold_metrics:
         test_df = pd.DataFrame(test_fold_metrics)
-        test_df.to_csv(logs_dir / f"test_fold_metrics{suffix}.csv", index=False)
+        test_df.to_csv(logs_dir / "test_fold_metrics_multiclass.csv", index=False)
         if len(test_fold_metrics) > 1:
             numeric_cols = [c for c in test_df.columns if c != "fold"]
             test_summary = pd.concat([
                 test_df[numeric_cols].mean().rename("mean"),
                 test_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / f"test_summary{suffix}.csv")
+            test_summary.to_csv(logs_dir / "test_summary_multiclass.csv")
             log.info("Test set summary (mean ± std across folds):")
-            for metric in ["stone_accuracy", "stone_f1", "stone_roc_auc"]:
+            for metric in ["stone_accuracy", "stone_macro_f1"]:
                 if metric in test_summary.index:
                     log.info(
                         f"  {metric}: "
