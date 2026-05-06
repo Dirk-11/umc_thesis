@@ -264,7 +264,7 @@ def evaluate_fold_moe(
     pred_cols = [f"pred_{c}" for c in class_names]
     true_cols = [f"true_{c}" for c in class_names]
 
-    presence_threshold = cfg.get("training_moe", {}).get("presence_threshold", 0.05)
+    presence_threshold = cfg["training_composition"]["presence_threshold"]
 
     img_metrics = compute_moe_metrics(
         img_df[pred_cols].values, img_df[true_cols].values, class_names, prefix="img_"

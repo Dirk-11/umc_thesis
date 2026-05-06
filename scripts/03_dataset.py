@@ -509,7 +509,7 @@ def make_multiclass_dataloader(
     subset = [samples[i] for i in indices]
     transform = build_transforms(cfg, train=train)
     dataset = MulticlassKidneyStoneDataset(subset, transform)
-    tcfg = cfg["training"]
+    tcfg = cfg["training_multiclass"]
     return DataLoader(
         dataset,
         batch_size=tcfg["batch_size"],

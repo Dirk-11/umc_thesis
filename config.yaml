@@ -144,7 +144,7 @@ cv:
   n_folds: 5
   stratify_on: "label"   # "label" (pure/mixed) or "primary_component"
   shuffle: true
-  test_fraction: 0.15    # fraction of stones held out as a final test set
+  test_fraction: 0.20    # fraction of stones held out as a final test set
 
 # -----------------------------------------------------------------------------
 # Model

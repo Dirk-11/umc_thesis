@@ -219,7 +219,7 @@ def main() -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    requested = cfg["training"]["device"]
+    requested = cfg["training_multiclass"]["device"]
     if requested == "mps" and torch.backends.mps.is_available():
         device = torch.device("mps")
     elif requested == "cuda" and torch.cuda.is_available():
