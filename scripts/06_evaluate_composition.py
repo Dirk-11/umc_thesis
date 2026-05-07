@@ -611,12 +611,12 @@ def main() -> None:
             "mean_std_per_class": within_std.mean(axis=1),
             **{f"std_{c}": within_std[f"pred_{c}"] for c in final_classes},
         })
-        within_variance.to_csv(logs_dir / "within_stone_variance.csv")
+        within_variance.to_csv(logs_dir / f"{p}_within_stone_variance.csv")
         log.info(
             f"Within-stone prediction std (mean across classes): "
             f"{within_variance['mean_std_per_class'].mean():.4f}"
         )
-        log.info(f"Saved: {logs_dir / 'within_stone_variance.csv'}")
+        log.info(f"Saved: {logs_dir / f'{p}_within_stone_variance.csv'}")
 
     # -------------------------------------------------------------------------
     # Baselines (2.1) — evaluated on test set
