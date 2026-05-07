@@ -4,8 +4,7 @@ data/processed/
 config.yaml
 
 # Outputs
-outputs/checkpoints/
-outputs/logs/
+
 
 # Python
 __pycache__/
