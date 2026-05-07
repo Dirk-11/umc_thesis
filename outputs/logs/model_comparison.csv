@@ -1,0 +1,3 @@
+comparison,model_a_f1,model_b_derived_f1,model_c_accuracy,model_b_derived_acc
+binary_pure_mixed,0.845360824742268,0.8245614035087719,,
+dominant_component,,,0.6716417910447762,0.7761194029850746
