@@ -125,13 +125,20 @@ class_remapping:
     "CYS": "CYS"
     # "OTH" stays as "OTH"
 
-  # The full list of final classes the model will see
+  # The full list of final classes produced by the remapping pipeline
   final_classes:
     - "CaOx"
     - "CHP"
     - "UA"
     - "MAP"
     - "CYS"
+    - "OTH"
+
+  # Classes excluded from Model B (composition regression) and Model C (multiclass).
+  # They are still used for data labelling but dropped as prediction targets.
+  # Rationale: OTH is a heterogeneous catch-all (Calcite / Protein / Xanthine)
+  # with too few stones (~4 pure at 90% threshold) to train or evaluate reliably.
+  exclude_classes:
     - "OTH"
 
 # -----------------------------------------------------------------------------

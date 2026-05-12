@@ -294,6 +294,19 @@ def main() -> None:
         images_csv, class_names, require_files_exist=True
     )
 
+    # Drop excluded classes — must match what 05_train_multiclass.py did so
+    # the held-out splits reconstruct identically
+    exclude = cfg["class_remapping"].get("exclude_classes", [])
+    if exclude:
+        excl_idx = {i for i, c in enumerate(class_names) if c in exclude}
+        all_samples = [s for s in all_samples if s.label not in excl_idx]
+        class_names = [c for c in class_names if c not in exclude]
+        cfg["model_multiclass"]["num_classes"] = len(class_names)
+        log.info(
+            f"Excluded classes {exclude} → {len(class_names)} classes remaining, "
+            f"{len({s.stone_id for s in all_samples})} stones"
+        )
+
     # Use binary labels for stratification to match Models A and B splits
     binary_labels = [s.binary_label for s in all_samples]
 
