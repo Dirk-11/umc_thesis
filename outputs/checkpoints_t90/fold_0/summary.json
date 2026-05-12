@@ -1,0 +1,16 @@
+{
+  "fold": 0,
+  "best_epoch": 7,
+  "best_val_loss": 0.6039101687617272,
+  "best_loss": 0.6039101687617272,
+  "best_accuracy": 0.6855345911949685,
+  "best_precision": 0.631578947368421,
+  "best_recall": 0.5538461538461539,
+  "best_f1": 0.5901639344262295,
+  "best_roc_auc": 0.7240589198036007,
+  "best_stone_accuracy": 0.6851851851851852,
+  "best_stone_precision": 0.631578947368421,
+  "best_stone_recall": 0.5454545454545454,
+  "best_stone_f1": 0.5853658536585366,
+  "best_stone_roc_auc": 0.7386363636363636
+}
