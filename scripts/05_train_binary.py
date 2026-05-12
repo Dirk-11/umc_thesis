@@ -26,6 +26,7 @@ verify everything is in place.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -45,6 +46,30 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
 log = setup_logging("train")
+
+
+# -----------------------------------------------------------------------------
+# Random-label baseline helper
+# -----------------------------------------------------------------------------
+def _shuffle_labels_stone_level(samples: list, rng: np.random.RandomState) -> list:
+    """Return new samples with labels permuted at the stone level.
+
+    All images of a stone receive the same (shuffled) label so there is no
+    within-stone inconsistency.  Used for the random-label sanity-check
+    baseline: a model trained this way should score near chance on the test set.
+    """
+    # Collect one label per stone, in encounter order
+    stone_ids_ordered: list[str] = []
+    stone_to_label: dict[str, int] = {}
+    for s in samples:
+        if s.stone_id not in stone_to_label:
+            stone_ids_ordered.append(s.stone_id)
+            stone_to_label[s.stone_id] = s.label
+
+    labels = [stone_to_label[sid] for sid in stone_ids_ordered]
+    shuffled = rng.permutation(labels).tolist()
+    shuffled_map = dict(zip(stone_ids_ordered, shuffled))
+    return [dataclasses.replace(s, label=shuffled_map[s.stone_id]) for s in samples]
 
 
 # -----------------------------------------------------------------------------
@@ -330,6 +355,18 @@ def main() -> None:
     parser.add_argument("--no-finetune", action="store_true",
                         help="Skip Phase 2 (frozen backbone baseline). "
                              "Saves checkpoints to checkpoints_frozen/ instead of checkpoints/.")
+    parser.add_argument("--random-labels", action="store_true",
+                        help="Permute training labels at the stone level before training "
+                             "(random-label sanity-check baseline). Checkpoints and logs "
+                             "are saved with a '_random' suffix so they never overwrite "
+                             "the real-label run.")
+    parser.add_argument("--purity-threshold", type=float, default=None,
+                        help="Override the purity threshold (e.g. 90) used to define "
+                             "pure vs mixed.  When set, labels are recomputed from "
+                             "composition fractions in the images CSV rather than using "
+                             "the pre-labelled 'label' column.  Outputs are saved with a "
+                             "'_t<value>' suffix (e.g. '_t90') so they never overwrite "
+                             "the default run.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -342,15 +379,31 @@ def main() -> None:
     device = resolve_device(cfg["training"]["device"])
     log.info(f"Device: {device}")
 
+    # Resolve purity threshold: CLI flag overrides config
+    purity_threshold = args.purity_threshold
+    if purity_threshold is None:
+        purity_threshold = float(cfg["data"]["purity_threshold"])
+    final_classes = cfg["class_remapping"]["final_classes"]
+
     # Build samples
     ds = import_module("03_dataset")
     images_csv = resolve_path(cfg, "processed_images_csv")
-    all_samples = ds.load_image_samples(images_csv, require_files_exist=True)
+    all_samples = ds.load_image_samples(
+        images_csv,
+        require_files_exist=True,
+        purity_threshold=purity_threshold,
+        final_classes=final_classes,
+    )
 
     # Hold out test set before CV
     test_fraction = cfg["cv"]["test_fraction"]
     train_val_idx, test_idx = ds.make_test_holdout(all_samples, test_fraction, seed)
     train_val_samples = [all_samples[i] for i in train_val_idx]
+
+    if args.random_labels:
+        rng = np.random.RandomState(seed)
+        train_val_samples = _shuffle_labels_stone_level(train_val_samples, rng)
+        log.info("--random-labels: stone-level labels have been shuffled (baseline mode)")
 
     folds = ds.make_stratified_folds(
         train_val_samples,
@@ -359,8 +412,16 @@ def main() -> None:
         shuffle=cfg["cv"]["shuffle"],
     )
 
+    # Build threshold tag for output naming (only when CLI flag was explicitly given)
+    threshold_tag = f"_t{int(purity_threshold)}" if args.purity_threshold is not None else ""
+
     ckpt_key = "checkpoints_frozen_dir" if args.no_finetune else "checkpoints_dir"
-    ckpt_dir = ensure_dir(resolve_path(cfg, ckpt_key))
+    ckpt_dir = resolve_path(cfg, ckpt_key)
+    if threshold_tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + threshold_tag)
+    if args.random_labels:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+    ckpt_dir = ensure_dir(ckpt_dir)
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
     # Run folds (indices are into train_val_samples)
@@ -377,7 +438,11 @@ def main() -> None:
         all_summaries.append(summary)
 
     # Cross-fold aggregate (only meaningful when running all folds)
-    suffix = "_frozen" if args.no_finetune else ""
+    suffix = threshold_tag
+    if args.no_finetune:
+        suffix += "_frozen"
+    if args.random_labels:
+        suffix += "_random"
     if args.fold is None and len(all_summaries) > 1:
         df = pd.DataFrame(all_summaries)
         metric_cols = [c for c in df.columns if c.startswith("best_") and c != "best_epoch"]

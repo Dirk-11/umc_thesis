@@ -125,6 +125,71 @@ def compute_metrics(df: pd.DataFrame, prefix: str = "") -> dict:
 # -----------------------------------------------------------------------------
 # Figures
 # -----------------------------------------------------------------------------
+def plot_training_curves(
+    history_dfs: list[pd.DataFrame],
+    output_path: Path,
+    title: str = "Training and validation loss",
+    train_col: str = "train_loss",
+    val_col: str = "val_loss",
+) -> None:
+    """Plot mean ± std train and val loss across folds.
+
+    Draws a vertical dashed line where the backbone is unfrozen (frozen→finetune
+    phase boundary) — this is informative for staged fine-tuning methods.
+    Shaded bands show ± 1 std across folds.
+    """
+    # Find the epoch at which the finetune phase begins (first fold that has it)
+    phase_boundary: int | None = None
+    for df in history_dfs:
+        ft = df[df["phase"] == "finetune"]
+        if not ft.empty:
+            b = int(ft["epoch"].min())
+            if phase_boundary is None or b < phase_boundary:
+                phase_boundary = b
+
+    # Collect per-epoch values across folds
+    max_epoch = max(int(df["epoch"].max()) for df in history_dfs)
+    train_by_epoch: dict[int, list[float]] = {e: [] for e in range(max_epoch + 1)}
+    val_by_epoch:   dict[int, list[float]] = {e: [] for e in range(max_epoch + 1)}
+
+    for df in history_dfs:
+        for _, row in df.iterrows():
+            e = int(row["epoch"])
+            if train_col in df.columns and pd.notna(row[train_col]):
+                train_by_epoch[e].append(float(row[train_col]))
+            if val_col in df.columns and pd.notna(row[val_col]):
+                val_by_epoch[e].append(float(row[val_col]))
+
+    epochs     = [e for e in range(max_epoch + 1) if train_by_epoch[e]]
+    train_mean = np.array([np.mean(train_by_epoch[e]) for e in epochs])
+    train_std  = np.array([np.std(train_by_epoch[e])  for e in epochs])
+    val_mean   = np.array([np.mean(val_by_epoch[e])   for e in epochs])
+    val_std    = np.array([np.std(val_by_epoch[e])    for e in epochs])
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    ax.plot(epochs, train_mean, color="steelblue", lw=2, label="Train loss")
+    ax.fill_between(epochs, train_mean - train_std, train_mean + train_std,
+                    alpha=0.2, color="steelblue")
+
+    ax.plot(epochs, val_mean, color="firebrick", lw=2, label="Val loss")
+    ax.fill_between(epochs, val_mean - val_std, val_mean + val_std,
+                    alpha=0.2, color="firebrick")
+
+    if phase_boundary is not None:
+        ax.axvline(phase_boundary - 0.5, color="gray", linestyle="--", lw=1.5,
+                   label="Backbone unfrozen")
+
+    ax.set_xlabel("Epoch", fontsize=12)
+    ax.set_ylabel("Loss", fontsize=12)
+    ax.set_title(title, fontsize=13)
+    ax.legend(fontsize=10)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    log.info(f"Saved: {output_path}")
+
+
 def plot_confusion_matrix(
     cm: np.ndarray,
     class_names: list[str],
@@ -166,6 +231,7 @@ def plot_roc_curves(
     fold_tprs: list[np.ndarray],
     fold_aucs: list[float],
     output_path: Path,
+    title: str = "ROC curve — stone-level (cross-validation)",
 ) -> None:
     """Plot per-fold ROC curves plus mean ± std band."""
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -201,7 +267,7 @@ def plot_roc_curves(
     ax.set_ylim([0, 1.02])
     ax.set_xlabel("False Positive Rate", fontsize=12)
     ax.set_ylabel("True Positive Rate", fontsize=12)
-    ax.set_title("ROC curve — stone-level (cross-validation)", fontsize=12)
+    ax.set_title(title, fontsize=12)
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
     fig.savefig(output_path, dpi=150)
@@ -271,6 +337,14 @@ def main() -> None:
     parser.add_argument("--frozen-baseline", action="store_true",
                         help="Load checkpoints from checkpoints_frozen/ (the --no-finetune run). "
                              "Outputs are written with a _frozen suffix.")
+    parser.add_argument("--random-labels", action="store_true",
+                        help="Load checkpoints from checkpoints_random/ (the --random-labels "
+                             "training run). Outputs are written with a _random suffix.")
+    parser.add_argument("--purity-threshold", type=float, default=None,
+                        help="Override the purity threshold (e.g. 90) used to define "
+                             "pure vs mixed when building samples for fold reconstruction "
+                             "and test evaluation.  Must match the value used during "
+                             "training.  Adds a '_t<value>' suffix to all outputs.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -289,10 +363,22 @@ def main() -> None:
         device = torch.device("cpu")
     log.info(f"Device: {device}")
 
-    # Build samples + folds (must use same seed as training to get same splits)
+    # Resolve purity threshold: CLI flag overrides config
+    purity_threshold = args.purity_threshold
+    if purity_threshold is None:
+        purity_threshold = float(cfg["data"]["purity_threshold"])
+    final_classes = cfg["class_remapping"]["final_classes"]
+    threshold_tag = f"_t{int(purity_threshold)}" if args.purity_threshold is not None else ""
+
+    # Build samples + folds (must use same seed/threshold as training to get same splits)
     ds_module = import_module("03_dataset")
     images_csv = resolve_path(cfg, "processed_images_csv")
-    all_samples = ds_module.load_image_samples(images_csv, require_files_exist=True)
+    all_samples = ds_module.load_image_samples(
+        images_csv,
+        require_files_exist=True,
+        purity_threshold=purity_threshold,
+        final_classes=final_classes,
+    )
 
     # Reconstruct the same test holdout used during training
     test_fraction = cfg["cv"]["test_fraction"]
@@ -308,11 +394,40 @@ def main() -> None:
 
     ckpt_key = "checkpoints_frozen_dir" if args.frozen_baseline else "checkpoints_dir"
     ckpt_dir = resolve_path(cfg, ckpt_key)
-    suffix = "_frozen" if args.frozen_baseline else ""
+    suffix = threshold_tag
+    if args.frozen_baseline:
+        suffix += "_frozen"
+    if threshold_tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + threshold_tag)
+    if args.random_labels:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+        suffix += "_random"
+    title_tag = ""
+    if threshold_tag:
+        title_tag += f" — {int(purity_threshold)}% purity threshold"
+    if args.random_labels:
+        title_tag += " — random-label baseline"
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
+
+    # -------------------------------------------------------------------------
+    # Training curves (reads history.csv written by 05_train_binary.py)
+    # -------------------------------------------------------------------------
+    history_dfs = []
+    for fold_i in fold_range:
+        hist_path = ckpt_dir / f"fold_{fold_i}" / "history.csv"
+        if hist_path.exists():
+            history_dfs.append(pd.read_csv(hist_path))
+    if history_dfs:
+        plot_training_curves(
+            history_dfs,
+            output_path=figures_dir / f"training_curves{suffix}.png",
+            title=f"Training and validation loss — Model A (binary){title_tag}",
+        )
+    else:
+        log.warning("No history.csv files found — skipping training curves plot")
 
     all_metrics: list[dict] = []
     all_stone_dfs: list[pd.DataFrame] = []
@@ -375,6 +490,7 @@ def main() -> None:
         cm,
         class_names=["pure", "mixed"],
         output_path=figures_dir / f"confusion_matrix{suffix}.png",
+        title=f"Confusion matrix (aggregated across folds){title_tag}",
     )
 
     # -------------------------------------------------------------------------
@@ -385,6 +501,7 @@ def main() -> None:
         plot_roc_curves(
             list(fprs), list(tprs), list(aucs),
             output_path=figures_dir / f"roc_curve{suffix}.png",
+            title=f"ROC curve — stone-level (cross-validation){title_tag}",
         )
     else:
         log.warning("Skipping ROC plot — not enough class diversity in val sets")
@@ -450,7 +567,7 @@ def main() -> None:
             cm_test,
             class_names=["pure", "mixed"],
             output_path=figures_dir / f"confusion_matrix_test{suffix}.png",
-            title="Confusion matrix — held-out test set",
+            title=f"Confusion matrix — held-out test set{title_tag}",
         )
 
         # ROC curve for test set
@@ -459,6 +576,7 @@ def main() -> None:
             plot_roc_curves(
                 list(fprs_t), list(tprs_t), list(aucs_t),
                 output_path=figures_dir / f"roc_curve_test{suffix}.png",
+                title=f"ROC curve — stone-level (held-out test set){title_tag}",
             )
 
     log.info("Evaluation complete.")

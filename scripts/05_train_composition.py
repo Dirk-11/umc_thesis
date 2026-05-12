@@ -33,6 +33,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -49,6 +50,28 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
 log = setup_logging("train_composition")
+
+
+# -----------------------------------------------------------------------------
+# Random-label baseline helper
+# -----------------------------------------------------------------------------
+def _shuffle_compositions_stone_level(samples: list, rng: np.random.RandomState) -> list:
+    """Return new samples with composition vectors permuted at the stone level.
+
+    All images of a stone receive the same (shuffled) composition so there is no
+    within-stone inconsistency.  Used for the random-label sanity-check baseline.
+    """
+    stone_ids_ordered: list[str] = []
+    stone_to_comp: dict[str, list] = {}
+    for s in samples:
+        if s.stone_id not in stone_to_comp:
+            stone_ids_ordered.append(s.stone_id)
+            stone_to_comp[s.stone_id] = s.composition
+
+    comps = [stone_to_comp[sid] for sid in stone_ids_ordered]
+    perm = rng.permutation(len(comps)).tolist()
+    shuffled_map = {sid: comps[perm[i]] for i, sid in enumerate(stone_ids_ordered)}
+    return [dataclasses.replace(s, composition=shuffled_map[s.stone_id]) for s in samples]
 
 
 # -----------------------------------------------------------------------------
@@ -410,8 +433,15 @@ def main() -> None:
                         help="2 epochs per phase (smoke test)")
     parser.add_argument("--model", choices=["parallel", "simple"], default="simple",
                         help="simple = single shared head (default), parallel = expert heads per class")
+    parser.add_argument("--random-labels", action="store_true",
+                        help="Permute composition vectors at the stone level before training "
+                             "(random-label sanity-check baseline). Checkpoints and logs "
+                             "are saved with a '_random' suffix so they never overwrite "
+                             "the real-label run.")
     args = parser.parse_args()
     model_type = args.model
+    # model_type_tag is used for all file naming so random runs never overwrite real runs
+    model_type_tag = f"{model_type}_random" if args.random_labels else model_type
 
     cfg  = load_config()
     seed = cfg["project"]["seed"]
@@ -435,6 +465,11 @@ def main() -> None:
     train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)
     train_val_samples = [all_samples[i] for i in train_val_idx]
 
+    if args.random_labels:
+        rng = np.random.RandomState(seed)
+        train_val_samples = _shuffle_compositions_stone_level(train_val_samples, rng)
+        log.info("--random-labels: stone-level composition vectors have been shuffled (baseline mode)")
+
     # Folds — stratified on binary label (same split as Model A for fair comparison)
     folds = ds_module.make_stratified_folds(
         train_val_samples,
@@ -446,7 +481,7 @@ def main() -> None:
     ckpt_key  = "checkpoints_composition_dir"
     ckpt_dir  = ensure_dir(resolve_path(cfg, ckpt_key))
     logs_dir  = ensure_dir(resolve_path(cfg, "logs_dir"))
-    log.info(f"Model type: {model_type}  |  checkpoints → {ckpt_dir}")
+    log.info(f"Model type: {model_type_tag}  |  checkpoints → {ckpt_dir}")
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
     all_summaries: list[dict] = []
@@ -457,7 +492,7 @@ def main() -> None:
         log.info(f"=== Fold {fold_i} ===")
         summary = train_one_fold(
             fold_i, train_val_samples, train_idx, val_idx,
-            cfg, device, fold_dir, quick=args.quick, model_type=model_type,
+            cfg, device, fold_dir, quick=args.quick, model_type=model_type_tag,
         )
         all_summaries.append(summary)
 
@@ -469,8 +504,8 @@ def main() -> None:
             df[metric_cols].mean().rename("mean"),
             df[metric_cols].std().rename("std"),
         ], axis=1)
-        agg.to_csv(logs_dir / f"cv_summary_{model_type}.csv")
-        df.to_csv(logs_dir / f"fold_summaries_{model_type}.csv", index=False)
+        agg.to_csv(logs_dir / f"cv_summary_{model_type_tag}.csv")
+        df.to_csv(logs_dir / f"fold_summaries_{model_type_tag}.csv", index=False)
 
         log.info("Cross-fold results:")
         for metric in [
@@ -501,7 +536,7 @@ def main() -> None:
 
     test_fold_metrics: list[dict] = []
     for fold_i in fold_range:
-        ckpt_path = ckpt_dir / f"fold_{fold_i}" / f"best_{model_type}.pt"
+        ckpt_path = ckpt_dir / f"fold_{fold_i}" / f"best_{model_type_tag}.pt"
         if not ckpt_path.exists():
             log.warning(f"  Fold {fold_i}: checkpoint not found at {ckpt_path}, skipping")
             continue
@@ -520,14 +555,14 @@ def main() -> None:
 
     if test_fold_metrics:
         test_df = pd.DataFrame(test_fold_metrics)
-        test_df.to_csv(logs_dir / f"test_fold_metrics_{model_type}.csv", index=False)
+        test_df.to_csv(logs_dir / f"test_fold_metrics_{model_type_tag}.csv", index=False)
         if len(test_fold_metrics) > 1:
             numeric_cols = [c for c in test_df.columns if c != "fold"]
             test_summary = pd.concat([
                 test_df[numeric_cols].mean().rename("mean"),
                 test_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / f"test_summary_{model_type}.csv")
+            test_summary.to_csv(logs_dir / f"test_summary_{model_type_tag}.csv")
             log.info("Test set summary (mean ± std across folds):")
             for metric in ["stone_mae_overall", "stone_dominant_acc", "stone_aitchison"]:
                 if metric in test_summary.index:

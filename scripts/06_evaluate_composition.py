@@ -301,6 +301,100 @@ def evaluate_fold_moe(
 # -----------------------------------------------------------------------------
 # Figures
 # -----------------------------------------------------------------------------
+def plot_training_curves(
+    history_dfs: list[pd.DataFrame],
+    output_path: Path,
+    title: str = "Training and validation loss — Model B (composition)",
+) -> None:
+    """Two-panel training curves for the composition model.
+
+    Top panel:    total training loss vs val loss (KL divergence).
+    Bottom panel: val stone-level MAE and val dominant-component accuracy.
+
+    The KL loss alone is hard to interpret, so showing MAE alongside it
+    gives the reader a metric they can intuitively understand.
+    Shaded bands = ± 1 std across folds.  Dashed line = backbone unfrozen.
+    """
+    phase_boundary: int | None = None
+    for df in history_dfs:
+        ft = df[df["phase"] == "finetune"]
+        if not ft.empty:
+            b = int(ft["epoch"].min())
+            if phase_boundary is None or b < phase_boundary:
+                phase_boundary = b
+
+    max_epoch = max(int(df["epoch"].max()) for df in history_dfs)
+
+    # Collect per-epoch values across folds for all four series
+    cols = ["train_total_loss", "val_loss", "val_stone_mae_overall", "val_stone_dominant_acc"]
+    by_epoch: dict[str, dict[int, list[float]]] = {
+        c: {e: [] for e in range(max_epoch + 1)} for c in cols
+    }
+    for df in history_dfs:
+        for _, row in df.iterrows():
+            e = int(row["epoch"])
+            for c in cols:
+                if c in df.columns and pd.notna(row.get(c)):
+                    by_epoch[c][e].append(float(row[c]))
+
+    def _agg(col: str) -> tuple[list[int], np.ndarray, np.ndarray]:
+        epochs = [e for e in range(max_epoch + 1) if by_epoch[col][e]]
+        mean   = np.array([np.mean(by_epoch[col][e]) for e in epochs])
+        std    = np.array([np.std(by_epoch[col][e])  for e in epochs])
+        return epochs, mean, std
+
+    fig, (ax_loss, ax_perf) = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
+
+    # --- Top: loss ---
+    for col, label, color in [
+        ("train_total_loss", "Train loss (total)", "steelblue"),
+        ("val_loss",         "Val loss (KL)",       "firebrick"),
+    ]:
+        epochs, mean, std = _agg(col)
+        ax_loss.plot(epochs, mean, color=color, lw=2, label=label)
+        ax_loss.fill_between(epochs, mean - std, mean + std, alpha=0.2, color=color)
+    if phase_boundary is not None:
+        ax_loss.axvline(phase_boundary - 0.5, color="gray", linestyle="--",
+                        lw=1.5, label="Backbone unfrozen")
+    ax_loss.set_ylabel("Loss", fontsize=12)
+    ax_loss.legend(fontsize=10)
+    ax_loss.set_title(title, fontsize=13)
+
+    # --- Bottom: interpretable metrics ---
+    ax_mae = ax_perf
+    ax_acc = ax_mae.twinx()
+
+    ep_mae, mean_mae, std_mae = _agg("val_stone_mae_overall")
+    ax_mae.plot(ep_mae, mean_mae, color="darkorange", lw=2, label="Val stone MAE")
+    ax_mae.fill_between(ep_mae, mean_mae - std_mae, mean_mae + std_mae,
+                         alpha=0.2, color="darkorange")
+    ax_mae.set_ylabel("Stone MAE (↓ better)", fontsize=12, color="darkorange")
+    ax_mae.tick_params(axis="y", labelcolor="darkorange")
+
+    ep_acc, mean_acc, std_acc = _agg("val_stone_dominant_acc")
+    ax_acc.plot(ep_acc, mean_acc, color="seagreen", lw=2, linestyle="--",
+                label="Val dominant acc")
+    ax_acc.fill_between(ep_acc, mean_acc - std_acc, mean_acc + std_acc,
+                         alpha=0.15, color="seagreen")
+    ax_acc.set_ylabel("Dominant-class accuracy (↑ better)", fontsize=12, color="seagreen")
+    ax_acc.tick_params(axis="y", labelcolor="seagreen")
+
+    if phase_boundary is not None:
+        ax_mae.axvline(phase_boundary - 0.5, color="gray", linestyle="--", lw=1.5)
+
+    ax_mae.set_xlabel("Epoch", fontsize=12)
+
+    # Combined legend for bottom panel
+    lines_mae, labels_mae = ax_mae.get_legend_handles_labels()
+    lines_acc, labels_acc = ax_acc.get_legend_handles_labels()
+    ax_mae.legend(lines_mae + lines_acc, labels_mae + labels_acc, fontsize=10)
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    log.info(f"Saved: {output_path}")
+
+
 def plot_mae_bars(
     summary_df: pd.DataFrame,
     class_names: list[str],
@@ -437,8 +531,14 @@ def main() -> None:
     parser.add_argument("--fold", type=int, default=None, help="Evaluate only this fold")
     parser.add_argument("--model", choices=["parallel", "simple"], default="simple",
                         help="simple = single shared head (default), parallel = expert heads")
+    parser.add_argument("--random-labels", action="store_true",
+                        help="Load checkpoints trained with --random-labels. Checkpoint names "
+                             "and all output files use the '_random' suffix automatically.")
     args = parser.parse_args()
     model_type = args.model
+    # model_type_tag drives all file naming; random runs get a distinct tag
+    model_type_tag = f"{model_type}_random" if args.random_labels else model_type
+    title_tag = " — random-label baseline" if args.random_labels else ""
 
     cfg = load_config()
     seed = cfg["project"]["seed"]
@@ -452,7 +552,7 @@ def main() -> None:
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    log.info(f"Device: {device}  |  model: {model_type}")
+    log.info(f"Device: {device}  |  model: {model_type_tag}")
 
     ds_module     = import_module("03_dataset")
     images_csv    = resolve_path(cfg, "processed_images_csv")
@@ -477,9 +577,26 @@ def main() -> None:
     ckpt_dir  = resolve_path(cfg, ckpt_key)
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir    = ensure_dir(resolve_path(cfg, "logs_dir"))
-    p = model_type  # short alias for filenames
+    p = model_type_tag  # short alias for filenames (includes _random when applicable)
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
+
+    # -------------------------------------------------------------------------
+    # Training curves (reads history_{model_type_tag}.csv from training)
+    # -------------------------------------------------------------------------
+    history_dfs = []
+    for fold_i in fold_range:
+        hist_path = ckpt_dir / f"fold_{fold_i}" / f"history_{model_type_tag}.csv"
+        if hist_path.exists():
+            history_dfs.append(pd.read_csv(hist_path))
+    if history_dfs:
+        plot_training_curves(
+            history_dfs,
+            output_path=figures_dir / f"{p}_training_curves.png",
+            title=f"Training and validation loss — Model B ({model_type_tag}){title_tag}",
+        )
+    else:
+        log.warning(f"No history_{model_type_tag}.csv files found — skipping training curves plot")
 
     # -------------------------------------------------------------------------
     # Validation fold evaluation
@@ -493,7 +610,7 @@ def main() -> None:
         fold_dir = ckpt_dir / f"fold_{fold_i}"
         metrics, stone_df, img_df = evaluate_fold_moe(
             fold_i, train_val_samples, val_idx, cfg, device, fold_dir,
-            final_classes, model_type=model_type,
+            final_classes, model_type=model_type_tag,
         )
         all_metrics.append(metrics)
         all_stone_dfs.append(stone_df)
@@ -532,11 +649,14 @@ def main() -> None:
     # Figures — val
     if cv_summary is not None:
         plot_mae_bars(cv_summary, final_classes,
-                      figures_dir / f"{p}_mae_bars.png")
+                      figures_dir / f"{p}_mae_bars.png",
+                      title=f"Per-class MAE — stone level (cross-validation){title_tag}")
     plot_composition_scatter(all_stones, final_classes,
-                             figures_dir / f"{p}_composition_scatter.png")
+                             figures_dir / f"{p}_composition_scatter.png",
+                             title=f"Predicted vs true composition — stone level{title_tag}")
     plot_primary_confusion(all_stones, final_classes,
-                           figures_dir / f"{p}_primary_confusion.png")
+                           figures_dir / f"{p}_primary_confusion.png",
+                           title=f"Primary component — predicted vs true (stone level){title_tag}")
 
     # -------------------------------------------------------------------------
     # Held-out test set evaluation
@@ -549,7 +669,7 @@ def main() -> None:
         fold_dir = ckpt_dir / f"fold_{fold_i}"
         t_metrics, t_stone_df, _ = evaluate_fold_moe(
             fold_i, all_samples, test_idx, cfg, device, fold_dir,
-            final_classes, model_type=model_type,
+            final_classes, model_type=model_type_tag,
         )
         test_metrics_all.append(t_metrics)
         test_stone_dfs.append(t_stone_df)
@@ -591,14 +711,14 @@ def main() -> None:
                     )
             plot_mae_bars(test_summary, final_classes,
                           figures_dir / f"{p}_mae_bars_test.png",
-                          title=f"Per-class MAE — stone level (held-out test set) [{p}]")
+                          title=f"Per-class MAE — stone level (held-out test set) [{p}]{title_tag}")
 
         plot_composition_scatter(test_agg, final_classes,
                                  figures_dir / f"{p}_composition_scatter_test.png",
-                                 title=f"Predicted vs true composition — held-out test set [{p}]")
+                                 title=f"Predicted vs true composition — held-out test set [{p}]{title_tag}")
         plot_primary_confusion(test_agg, final_classes,
                                figures_dir / f"{p}_primary_confusion_test.png",
-                               title=f"Primary component — predicted vs true (held-out test set) [{p}]")
+                               title=f"Primary component — predicted vs true (held-out test set) [{p}]{title_tag}")
 
     # -------------------------------------------------------------------------
     # Within-stone prediction variance (3.1)

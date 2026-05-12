@@ -116,6 +116,60 @@ def compute_metrics(df: pd.DataFrame, class_names: list[str], prefix: str = "") 
 # -----------------------------------------------------------------------------
 # Figures
 # -----------------------------------------------------------------------------
+def plot_training_curves(
+    history_dfs: list[pd.DataFrame],
+    output_path: Path,
+    title: str = "Training and validation loss",
+    train_col: str = "train_loss",
+    val_col: str = "val_loss",
+) -> None:
+    """Plot mean ± std train and val loss across folds with phase boundary marker."""
+    phase_boundary: int | None = None
+    for df in history_dfs:
+        ft = df[df["phase"] == "finetune"]
+        if not ft.empty:
+            b = int(ft["epoch"].min())
+            if phase_boundary is None or b < phase_boundary:
+                phase_boundary = b
+
+    max_epoch = max(int(df["epoch"].max()) for df in history_dfs)
+    train_by_epoch: dict[int, list[float]] = {e: [] for e in range(max_epoch + 1)}
+    val_by_epoch:   dict[int, list[float]] = {e: [] for e in range(max_epoch + 1)}
+
+    for df in history_dfs:
+        for _, row in df.iterrows():
+            e = int(row["epoch"])
+            if train_col in df.columns and pd.notna(row[train_col]):
+                train_by_epoch[e].append(float(row[train_col]))
+            if val_col in df.columns and pd.notna(row[val_col]):
+                val_by_epoch[e].append(float(row[val_col]))
+
+    epochs     = [e for e in range(max_epoch + 1) if train_by_epoch[e]]
+    train_mean = np.array([np.mean(train_by_epoch[e]) for e in epochs])
+    train_std  = np.array([np.std(train_by_epoch[e])  for e in epochs])
+    val_mean   = np.array([np.mean(val_by_epoch[e])   for e in epochs])
+    val_std    = np.array([np.std(val_by_epoch[e])    for e in epochs])
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(epochs, train_mean, color="steelblue", lw=2, label="Train loss")
+    ax.fill_between(epochs, train_mean - train_std, train_mean + train_std,
+                    alpha=0.2, color="steelblue")
+    ax.plot(epochs, val_mean, color="firebrick", lw=2, label="Val loss")
+    ax.fill_between(epochs, val_mean - val_std, val_mean + val_std,
+                    alpha=0.2, color="firebrick")
+    if phase_boundary is not None:
+        ax.axvline(phase_boundary - 0.5, color="gray", linestyle="--", lw=1.5,
+                   label="Backbone unfrozen")
+    ax.set_xlabel("Epoch", fontsize=12)
+    ax.set_ylabel("Loss", fontsize=12)
+    ax.set_title(title, fontsize=13)
+    ax.legend(fontsize=10)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    log.info(f"Saved: {output_path}")
+
+
 def plot_confusion_matrix(
     cm: np.ndarray,
     class_names: list[str],
@@ -212,6 +266,10 @@ def evaluate_fold(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fold", type=int, default=None)
+    parser.add_argument("--random-labels", action="store_true",
+                        help="Load checkpoints from checkpoints_multiclass_random/ "
+                             "(the --random-labels training run). Outputs are written "
+                             "with a _random suffix.")
     args = parser.parse_args()
 
     cfg  = load_config()
@@ -254,11 +312,32 @@ def main() -> None:
         stratify_labels=train_val_binary,
     )
 
-    ckpt_dir    = resolve_path(cfg, "checkpoints_multiclass_dir")
+    ckpt_dir = resolve_path(cfg, "checkpoints_multiclass_dir")
+    if args.random_labels:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+    suffix    = "_random" if args.random_labels else ""
+    title_tag = " — random-label baseline" if args.random_labels else ""
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir    = ensure_dir(resolve_path(cfg, "logs_dir"))
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
+
+    # -------------------------------------------------------------------------
+    # Training curves (reads history.csv written by 05_train_multiclass.py)
+    # -------------------------------------------------------------------------
+    history_dfs = []
+    for fold_i in fold_range:
+        hist_path = ckpt_dir / f"fold_{fold_i}" / "history.csv"
+        if hist_path.exists():
+            history_dfs.append(pd.read_csv(hist_path))
+    if history_dfs:
+        plot_training_curves(
+            history_dfs,
+            output_path=figures_dir / f"training_curves_multiclass{suffix}.png",
+            title=f"Training and validation loss — Model C (6-class){title_tag}",
+        )
+    else:
+        log.warning("No history.csv files found — skipping training curves plot")
 
     all_metrics:    list[dict]         = []
     all_stone_dfs:  list[pd.DataFrame] = []
@@ -276,10 +355,10 @@ def main() -> None:
     # Save per-stone predictions (CV validation sets)
     # -------------------------------------------------------------------------
     all_stones = pd.concat(all_stone_dfs, ignore_index=True)
-    all_stones.to_csv(logs_dir / "eval_stone_predictions_multiclass.csv", index=False)
+    all_stones.to_csv(logs_dir / f"eval_stone_predictions_multiclass{suffix}.csv", index=False)
 
     fold_df = pd.DataFrame(all_metrics)
-    fold_df.to_csv(logs_dir / "eval_fold_summaries_multiclass.csv", index=False)
+    fold_df.to_csv(logs_dir / f"eval_fold_summaries_multiclass{suffix}.csv", index=False)
 
     if len(all_metrics) > 1:
         numeric_cols = [c for c in fold_df.columns if c != "fold"]
@@ -287,8 +366,8 @@ def main() -> None:
             fold_df[numeric_cols].mean().rename("mean"),
             fold_df[numeric_cols].std().rename("std"),
         ], axis=1)
-        summary.to_csv(logs_dir / "eval_cv_summary_multiclass.csv")
-        log.info(f"Saved: {logs_dir / 'eval_cv_summary_multiclass.csv'}")
+        summary.to_csv(logs_dir / f"eval_cv_summary_multiclass{suffix}.csv")
+        log.info(f"Saved: {logs_dir / f'eval_cv_summary_multiclass{suffix}.csv'}")
         log.info("Cross-fold results:")
         for metric in ["stone_accuracy", "stone_macro_f1"]:
             if metric in summary.index:
@@ -306,8 +385,8 @@ def main() -> None:
     )
     plot_confusion_matrix(
         cm, class_names,
-        output_path=figures_dir / "confusion_matrix_multiclass.png",
-        title="Confusion matrix — primary component (cross-validation)",
+        output_path=figures_dir / f"confusion_matrix_multiclass{suffix}.png",
+        title=f"Confusion matrix — primary component (cross-validation){title_tag}",
     )
 
     # -------------------------------------------------------------------------
@@ -330,7 +409,7 @@ def main() -> None:
 
     if test_metrics_all:
         test_fold_df = pd.DataFrame(test_metrics_all)
-        test_fold_df.to_csv(logs_dir / "eval_test_fold_summaries_multiclass.csv", index=False)
+        test_fold_df.to_csv(logs_dir / f"eval_test_fold_summaries_multiclass{suffix}.csv", index=False)
 
         # Average probabilities across folds per stone
         all_test_stones = pd.concat(test_stone_dfs, ignore_index=True)
@@ -340,9 +419,9 @@ def main() -> None:
         ).reset_index()
         test_stone_agg["pred"] = test_stone_agg[prob_cols].values.argmax(axis=1)
         test_stone_agg.to_csv(
-            logs_dir / "eval_test_stone_predictions_multiclass.csv", index=False
+            logs_dir / f"eval_test_stone_predictions_multiclass{suffix}.csv", index=False
         )
-        log.info(f"Saved: {logs_dir / 'eval_test_stone_predictions_multiclass.csv'}")
+        log.info(f"Saved: {logs_dir / f'eval_test_stone_predictions_multiclass{suffix}.csv'}")
 
         if len(test_metrics_all) > 1:
             numeric_cols = [c for c in test_fold_df.columns if c != "fold"]
@@ -350,8 +429,8 @@ def main() -> None:
                 test_fold_df[numeric_cols].mean().rename("mean"),
                 test_fold_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / "eval_test_summary_multiclass.csv")
-            log.info(f"Saved: {logs_dir / 'eval_test_summary_multiclass.csv'}")
+            test_summary.to_csv(logs_dir / f"eval_test_summary_multiclass{suffix}.csv")
+            log.info(f"Saved: {logs_dir / f'eval_test_summary_multiclass{suffix}.csv'}")
             log.info("Test set results (mean ± std across folds):")
             for metric in ["stone_accuracy", "stone_macro_f1"]:
                 if metric in test_summary.index:
@@ -368,8 +447,8 @@ def main() -> None:
         )
         plot_confusion_matrix(
             cm_test, class_names,
-            output_path=figures_dir / "confusion_matrix_test_multiclass.png",
-            title="Confusion matrix — primary component (held-out test set)",
+            output_path=figures_dir / f"confusion_matrix_test_multiclass{suffix}.png",
+            title=f"Confusion matrix — primary component (held-out test set){title_tag}",
         )
 
     log.info("Evaluation complete.")

@@ -22,6 +22,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -39,6 +40,29 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
 log = setup_logging("train_multiclass")
+
+
+# -----------------------------------------------------------------------------
+# Random-label baseline helper
+# -----------------------------------------------------------------------------
+def _shuffle_labels_stone_level(samples: list, rng: np.random.RandomState) -> list:
+    """Return new samples with labels permuted at the stone level.
+
+    All images of a stone receive the same (shuffled) label so there is no
+    within-stone inconsistency.  Used for the random-label sanity-check
+    baseline: a model trained this way should score near chance on the test set.
+    """
+    stone_ids_ordered: list[str] = []
+    stone_to_label: dict[str, int] = {}
+    for s in samples:
+        if s.stone_id not in stone_to_label:
+            stone_ids_ordered.append(s.stone_id)
+            stone_to_label[s.stone_id] = s.label
+
+    labels = [stone_to_label[sid] for sid in stone_ids_ordered]
+    shuffled = rng.permutation(labels).tolist()
+    shuffled_map = dict(zip(stone_ids_ordered, shuffled))
+    return [dataclasses.replace(s, label=shuffled_map[s.stone_id]) for s in samples]
 
 
 # -----------------------------------------------------------------------------
@@ -309,6 +333,11 @@ def main() -> None:
     parser.add_argument("--fold",  type=int,  default=None)
     parser.add_argument("--quick", action="store_true",
                         help="2 epochs per phase (smoke test)")
+    parser.add_argument("--random-labels", action="store_true",
+                        help="Permute training labels at the stone level before training "
+                             "(random-label sanity-check baseline). Checkpoints and logs "
+                             "are saved with a '_random' suffix so they never overwrite "
+                             "the real-label run.")
     args = parser.parse_args()
 
     cfg  = load_config()
@@ -339,6 +368,11 @@ def main() -> None:
     train_val_samples = [all_samples[i] for i in train_val_idx]
     train_val_binary  = [binary_labels[i] for i in train_val_idx]
 
+    if args.random_labels:
+        rng = np.random.RandomState(seed)
+        train_val_samples = _shuffle_labels_stone_level(train_val_samples, rng)
+        log.info("--random-labels: stone-level labels have been shuffled (baseline mode)")
+
     # Folds — same stratification as Models A and B
     folds = ds_module.make_stratified_folds(
         train_val_samples,
@@ -348,8 +382,12 @@ def main() -> None:
         stratify_labels=train_val_binary,
     )
 
-    ckpt_dir = ensure_dir(resolve_path(cfg, "checkpoints_multiclass_dir"))
+    ckpt_dir = resolve_path(cfg, "checkpoints_multiclass_dir")
+    if args.random_labels:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+    ckpt_dir = ensure_dir(ckpt_dir)
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
+    suffix = "_random" if args.random_labels else ""
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
     all_summaries: list[dict] = []
@@ -372,8 +410,8 @@ def main() -> None:
             df[metric_cols].mean().rename("mean"),
             df[metric_cols].std().rename("std"),
         ], axis=1)
-        agg.to_csv(logs_dir / "cv_summary_multiclass.csv")
-        df.to_csv(logs_dir / "fold_summaries_multiclass.csv", index=False)
+        agg.to_csv(logs_dir / f"cv_summary_multiclass{suffix}.csv")
+        df.to_csv(logs_dir / f"fold_summaries_multiclass{suffix}.csv", index=False)
         log.info("Cross-fold results:")
         for metric in ["best_stone_accuracy", "best_stone_macro_f1"]:
             if metric in agg.index:
@@ -412,14 +450,14 @@ def main() -> None:
 
     if test_fold_metrics:
         test_df = pd.DataFrame(test_fold_metrics)
-        test_df.to_csv(logs_dir / "test_fold_metrics_multiclass.csv", index=False)
+        test_df.to_csv(logs_dir / f"test_fold_metrics_multiclass{suffix}.csv", index=False)
         if len(test_fold_metrics) > 1:
             numeric_cols = [c for c in test_df.columns if c != "fold"]
             test_summary = pd.concat([
                 test_df[numeric_cols].mean().rename("mean"),
                 test_df[numeric_cols].std().rename("std"),
             ], axis=1)
-            test_summary.to_csv(logs_dir / "test_summary_multiclass.csv")
+            test_summary.to_csv(logs_dir / f"test_summary_multiclass{suffix}.csv")
             log.info("Test set summary (mean ± std across folds):")
             for metric in ["stone_accuracy", "stone_macro_f1"]:
                 if metric in test_summary.index:

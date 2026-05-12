@@ -114,20 +114,61 @@ class KidneyStoneDataset(Dataset):
 # -----------------------------------------------------------------------------
 # Sample construction from CSVs
 # -----------------------------------------------------------------------------
-def load_image_samples(images_csv: Path, require_files_exist: bool = True) -> list[StoneSample]:
+def load_image_samples(
+    images_csv: Path,
+    require_files_exist: bool = True,
+    purity_threshold: float | None = None,
+    final_classes: list[str] | None = None,
+) -> list[StoneSample]:
     """Read the image-level CSV from 01_data_prep and convert to StoneSample list.
 
+    Args:
+        images_csv:        Path to the image-level CSV.
+        require_files_exist: Drop rows where the image file is missing on disk.
+        purity_threshold:  If given (e.g. 90.0), override the 'label' column and
+                           recompute pure/mixed from composition fractions.
+                           A stone is "pure" when its dominant component fraction
+                           × 100 ≥ purity_threshold.  Requires final_classes.
+        final_classes:     Class names matching the comp_{cls} columns.  Only
+                           needed when purity_threshold is not None.
+
     Filters out:
-      - Rows with no label (e.g. stones excluded for missing data)
+      - Rows with no label (or no composition when recomputing)
       - Rows where the image file doesn't exist on disk (if require_files_exist)
     """
     df = pd.read_csv(images_csv)
 
-    n_total = len(df)
-    df = df[df["label"].notna()].copy()
-    n_unlabeled = n_total - len(df)
-    if n_unlabeled > 0:
-        log.info(f"Skipped {n_unlabeled} rows with no label")
+    if purity_threshold is not None:
+        if final_classes is None:
+            raise ValueError("final_classes is required when purity_threshold is set")
+        comp_cols = [f"comp_{cls}" for cls in final_classes]
+        missing = [c for c in comp_cols if c not in df.columns]
+        if missing:
+            raise ValueError(
+                f"Cannot recompute labels: composition columns missing from CSV: {missing}. "
+                "Re-run 01_data_prep.py to regenerate the CSV."
+            )
+        # Drop rows with no composition data
+        n_before = len(df)
+        df = df[df[comp_cols].sum(axis=1) > 0].copy()
+        if len(df) < n_before:
+            log.info(f"Skipped {n_before - len(df)} rows with no composition data")
+        # Recompute label: pure if primary fraction × 100 >= threshold
+        primary_frac = df[comp_cols].max(axis=1)
+        df["label"] = np.where(primary_frac * 100 >= purity_threshold, "pure", "mixed")
+        n_pure  = (df["label"] == "pure").sum()
+        n_mixed = (df["label"] == "mixed").sum()
+        log.info(
+            f"Recomputed labels at {purity_threshold}% threshold: "
+            f"{n_pure} pure / {n_mixed} mixed "
+            f"({df['fragment'].nunique()} stones)"
+        )
+    else:
+        n_total = len(df)
+        df = df[df["label"].notna()].copy()
+        n_unlabeled = n_total - len(df)
+        if n_unlabeled > 0:
+            log.info(f"Skipped {n_unlabeled} rows with no label")
 
     if require_files_exist:
         n_before = len(df)
