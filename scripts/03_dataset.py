@@ -95,18 +95,27 @@ class KidneyStoneDataset(Dataset):
     Each item returns (image_tensor, label, stone_id). The stone_id lets us
     group the 3 photos of a stone back together at evaluation time without
     having to track indices separately.
+
+    When cache=True all images are loaded into RAM once at init time, eliminating
+    repeated disk reads. Transforms (augmentations) still run per-item.
     """
 
-    def __init__(self, samples: list[StoneSample], transform: transforms.Compose):
+    def __init__(self, samples: list[StoneSample], transform: transforms.Compose,
+                 cache: bool = False):
         self.samples = samples
         self.transform = transform
+        self._cache: list[Image.Image] | None = None
+        if cache:
+            log.info(f"Caching {len(samples)} images into RAM...")
+            self._cache = [Image.open(s.image_path).convert("RGB") for s in samples]
+            log.info("Image cache ready.")
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, int, str]:
         sample = self.samples[idx]
-        img = Image.open(sample.image_path).convert("RGB")
+        img = self._cache[idx] if self._cache is not None else Image.open(sample.image_path).convert("RGB")
         img = self.transform(img)
         return img, sample.label, sample.stone_id
 
@@ -326,7 +335,8 @@ def make_dataloader(
     """Build a DataLoader from a subset of samples."""
     subset = [samples[i] for i in indices]
     transform = build_transforms(cfg, train=train)
-    dataset = KidneyStoneDataset(subset, transform)
+    cache = cfg["training"].get("cache_images", False)
+    dataset = KidneyStoneDataset(subset, transform, cache=cache)
     return DataLoader(
         dataset,
         batch_size=cfg["training"]["batch_size"],
@@ -357,18 +367,27 @@ class CompositionalKidneyStoneDataset(Dataset):
       composition_tensor: (n_classes,) float32, sums to 1.0
       stone_id:           str, for stone-level aggregation at eval time
       label:              int, binary pure/mixed (0/1)
+
+    When cache=True all images are loaded into RAM once at init time, eliminating
+    repeated disk reads. Transforms (augmentations) still run per-item.
     """
 
-    def __init__(self, samples: list[CompositionalSample], transform: transforms.Compose):
+    def __init__(self, samples: list[CompositionalSample], transform: transforms.Compose,
+                 cache: bool = False):
         self.samples = samples
         self.transform = transform
+        self._cache: list[Image.Image] | None = None
+        if cache:
+            log.info(f"Caching {len(samples)} images into RAM...")
+            self._cache = [Image.open(s.image_path).convert("RGB") for s in samples]
+            log.info("Image cache ready.")
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, str, int]:
         sample = self.samples[idx]
-        img = Image.open(sample.image_path).convert("RGB")
+        img = self._cache[idx] if self._cache is not None else Image.open(sample.image_path).convert("RGB")
         img = self.transform(img)
         comp = torch.tensor(sample.composition, dtype=torch.float32)
         return img, comp, sample.stone_id, sample.label
@@ -434,8 +453,9 @@ def make_compositional_dataloader(
     """Build a DataLoader for compositional regression from a subset of samples."""
     subset = [samples[i] for i in indices]
     transform = build_transforms(cfg, train=train)
-    dataset = CompositionalKidneyStoneDataset(subset, transform)
     tcfg = cfg["training_composition"]
+    cache = tcfg.get("cache_images", False)
+    dataset = CompositionalKidneyStoneDataset(subset, transform, cache=cache)
     return DataLoader(
         dataset,
         batch_size=tcfg["batch_size"],
@@ -464,18 +484,27 @@ class MulticlassKidneyStoneDataset(Dataset):
 
     Each item returns (image_tensor, label_int, stone_id) — same signature as
     KidneyStoneDataset so training/eval code can be shared.
+
+    When cache=True all images are loaded into RAM once at init time, eliminating
+    repeated disk reads. Transforms (augmentations) still run per-item.
     """
 
-    def __init__(self, samples: list[MulticlassSample], transform: transforms.Compose):
+    def __init__(self, samples: list[MulticlassSample], transform: transforms.Compose,
+                 cache: bool = False):
         self.samples = samples
         self.transform = transform
+        self._cache: list[Image.Image] | None = None
+        if cache:
+            log.info(f"Caching {len(samples)} images into RAM...")
+            self._cache = [Image.open(s.image_path).convert("RGB") for s in samples]
+            log.info("Image cache ready.")
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, int, str]:
         sample = self.samples[idx]
-        img = Image.open(sample.image_path).convert("RGB")
+        img = self._cache[idx] if self._cache is not None else Image.open(sample.image_path).convert("RGB")
         img = self.transform(img)
         return img, sample.label, sample.stone_id
 
@@ -549,8 +578,9 @@ def make_multiclass_dataloader(
     """Build a DataLoader for multiclass primary-component classification."""
     subset = [samples[i] for i in indices]
     transform = build_transforms(cfg, train=train)
-    dataset = MulticlassKidneyStoneDataset(subset, transform)
     tcfg = cfg["training_multiclass"]
+    cache = tcfg.get("cache_images", False)
+    dataset = MulticlassKidneyStoneDataset(subset, transform, cache=cache)
     return DataLoader(
         dataset,
         batch_size=tcfg["batch_size"],
