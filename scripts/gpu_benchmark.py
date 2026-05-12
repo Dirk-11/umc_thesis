@@ -75,9 +75,7 @@ def main():
     print()
 
     # Build a real DataLoader using the actual dataset + augmentations.
-    # Force num_workers=0 on Windows — multiprocessing spawn requires it.
     import importlib
-    import platform
     ds = importlib.import_module("03_dataset")
     images_csv = resolve_path(cfg, "processed_images_csv")
     samples = ds.load_image_samples(images_csv)
@@ -85,9 +83,6 @@ def main():
     cache = cfg["training"].get("cache_images", False)
     if cache:
         print("cache_images: true — images will be preloaded into RAM")
-    if platform.system() == "Windows":
-        cfg["training"]["num_workers"] = 0
-        print("Windows detected — num_workers set to 0")
     loader = ds.make_dataloader(samples, indices, cfg, train=True)
     n_batches = min(30, len(loader))
     print(f"Dataset:    {len(samples)} images  →  {len(loader)} batches")
