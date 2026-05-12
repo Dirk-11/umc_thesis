@@ -349,13 +349,25 @@ def main() -> None:
     log.info(f"Device: {device}")
 
     class_names = cfg["class_remapping"]["final_classes"]
-    log.info(f"Classes ({len(class_names)}): {class_names}")
 
     ds_module  = import_module("03_dataset")
     images_csv = resolve_path(cfg, "processed_images_csv")
     all_samples = ds_module.load_multiclass_samples(
         images_csv, class_names, require_files_exist=True
     )
+
+    # Drop excluded classes (e.g. OTH: too few stones, chemically heterogeneous)
+    exclude = cfg["class_remapping"].get("exclude_classes", [])
+    if exclude:
+        excl_idx = {i for i, c in enumerate(class_names) if c in exclude}
+        all_samples = [s for s in all_samples if s.label not in excl_idx]
+        class_names = [c for c in class_names if c not in exclude]
+        cfg["model_multiclass"]["num_classes"] = len(class_names)
+        log.info(
+            f"Excluded classes {exclude} → {len(class_names)} classes remaining, "
+            f"{len({s.stone_id for s in all_samples})} stones"
+        )
+    log.info(f"Classes ({len(class_names)}): {class_names}")
 
     # Stratify on binary pure/mixed labels to produce the same folds as Models A and B
     binary_labels = [s.binary_label for s in all_samples]

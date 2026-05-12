@@ -460,6 +460,34 @@ def main() -> None:
         images_csv, final_classes, require_files_exist=True
     )
 
+    # Drop excluded classes (e.g. OTH) from the composition model:
+    #   1. Remove stones where an excluded class is the dominant component
+    #      (their composition vector is unreliable as a regression target).
+    #   2. Drop the excluded column(s) from every remaining stone's composition
+    #      and renormalise so the vector still sums to 1.
+    exclude = cfg["class_remapping"].get("exclude_classes", [])
+    if exclude:
+        excl_idx = [i for i, c in enumerate(final_classes) if c in exclude]
+        keep_idx = [i for i, c in enumerate(final_classes) if c not in exclude]
+        # Step 1: remove dominant-excluded stones
+        all_samples = [
+            s for s in all_samples
+            if int(np.argmax(s.composition)) not in excl_idx
+        ]
+        # Step 2: drop excluded columns and renormalise
+        trimmed = []
+        for s in all_samples:
+            comp = [s.composition[i] for i in keep_idx]
+            total = sum(comp)
+            comp = [x / total for x in comp] if total > 0 else comp
+            trimmed.append(dataclasses.replace(s, composition=comp))
+        all_samples = trimmed
+        final_classes = [c for c in final_classes if c not in exclude]
+        log.info(
+            f"Excluded classes {exclude} → {len(final_classes)} classes remaining, "
+            f"{len({s.stone_id for s in all_samples})} stones"
+        )
+
     # Hold out test set before CV
     test_fraction = cfg["cv"]["test_fraction"]
     train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)

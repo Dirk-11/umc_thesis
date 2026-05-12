@@ -38,6 +38,7 @@ Run 05_train_moe.py first to produce checkpoints.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import sys
 from importlib import import_module
 from pathlib import Path
@@ -561,6 +562,29 @@ def main() -> None:
     all_samples = ds_module.load_compositional_samples(
         images_csv, final_classes, require_files_exist=True
     )
+
+    # Drop excluded classes — must mirror 05_train_composition.py exactly so
+    # the held-out splits reconstruct identically
+    exclude = cfg["class_remapping"].get("exclude_classes", [])
+    if exclude:
+        excl_idx = [i for i, c in enumerate(final_classes) if c in exclude]
+        keep_idx = [i for i, c in enumerate(final_classes) if c not in exclude]
+        all_samples = [
+            s for s in all_samples
+            if int(np.argmax(s.composition)) not in excl_idx
+        ]
+        trimmed = []
+        for s in all_samples:
+            comp = [s.composition[i] for i in keep_idx]
+            total = sum(comp)
+            comp = [x / total for x in comp] if total > 0 else comp
+            trimmed.append(dataclasses.replace(s, composition=comp))
+        all_samples = trimmed
+        final_classes = [c for c in final_classes if c not in exclude]
+        log.info(
+            f"Excluded classes {exclude} → {len(final_classes)} classes remaining, "
+            f"{len({s.stone_id for s in all_samples})} stones"
+        )
 
     test_fraction = cfg["cv"]["test_fraction"]
     train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)
