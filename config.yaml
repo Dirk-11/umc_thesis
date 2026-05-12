@@ -171,6 +171,7 @@ training:
   device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
   batch_size: 32
   num_workers: 4
+  cache_images: true       # preload all images into RAM to eliminate disk I/O bottleneck
   epochs_frozen: 5         # train only the head with frozen backbone
   epochs_finetune: 20      # then fine-tune backbone too
   learning_rate_head: 0.001
@@ -240,6 +241,7 @@ training_composition:
   device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
   batch_size: 32
   num_workers: 4
+  cache_images: true       # preload all images into RAM to eliminate disk I/O bottleneck
   epochs_frozen: 5        # train only the heads with frozen backbone
   epochs_finetune: 25     # then fine-tune backbone too
   learning_rate_head: 0.001
@@ -260,6 +262,7 @@ training_multiclass:
   device: "cuda"
   batch_size: 32
   num_workers: 4
+  cache_images: true       # preload all images into RAM to eliminate disk I/O bottleneck
   epochs_frozen: 5
   epochs_finetune: 20
   learning_rate_head: 0.001
