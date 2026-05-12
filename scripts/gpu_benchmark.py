@@ -80,9 +80,6 @@ def main():
     images_csv = resolve_path(cfg, "processed_images_csv")
     samples = ds.load_image_samples(images_csv)
     indices = list(range(len(samples)))
-    cache = cfg["training"].get("cache_images", False)
-    if cache:
-        print("cache_images: true — images will be preloaded into RAM")
     loader = ds.make_dataloader(samples, indices, cfg, train=True)
     n_batches = min(30, len(loader))
     print(f"Dataset:    {len(samples)} images  →  {len(loader)} batches")
