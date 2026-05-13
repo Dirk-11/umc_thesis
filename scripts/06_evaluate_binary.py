@@ -345,6 +345,10 @@ def main() -> None:
                              "pure vs mixed when building samples for fold reconstruction "
                              "and test evaluation.  Must match the value used during "
                              "training.  Adds a '_t<value>' suffix to all outputs.")
+    parser.add_argument("--tag", type=str, default=None,
+                        help="Experiment tag — must match the --tag used during training "
+                             "(e.g. --tag wd001_lrlow). Points evaluation at the tagged "
+                             "checkpoint directory and adds the tag to all output filenames.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -402,11 +406,16 @@ def main() -> None:
     if args.random_labels:
         ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
         suffix += "_random"
+    if args.tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
+        suffix += f"_{args.tag}"
     title_tag = ""
     if threshold_tag:
         title_tag += f" — {int(purity_threshold)}% purity threshold"
     if args.random_labels:
         title_tag += " — random-label baseline"
+    if args.tag:
+        title_tag += f" — {args.tag}"
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
