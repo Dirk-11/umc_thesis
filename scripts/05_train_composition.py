@@ -488,9 +488,12 @@ def main() -> None:
             f"{len({s.stone_id for s in all_samples})} stones"
         )
 
-    # Hold out test set before CV
+    # Hold out test set — stratified on dominant mineral class
     test_fraction = cfg["cv"]["test_fraction"]
-    train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)
+    all_dominant = [int(np.argmax(s.composition)) for s in all_samples]
+    train_val_idx, test_idx = ds_module.make_test_holdout(
+        all_samples, test_fraction, seed, stratify_labels=all_dominant
+    )
     train_val_samples = [all_samples[i] for i in train_val_idx]
 
     if args.random_labels:
@@ -498,12 +501,16 @@ def main() -> None:
         train_val_samples = _shuffle_compositions_stone_level(train_val_samples, rng)
         log.info("--random-labels: stone-level composition vectors have been shuffled (baseline mode)")
 
-    # Folds — stratified on binary label (same split as Model A for fair comparison)
+    # Folds — stratified on dominant mineral class (argmax of composition vector)
+    # This ensures each fold has a representative mix of all mineral types,
+    # which is more appropriate for a composition regression model than binary stratification.
+    dominant_labels = [int(np.argmax(s.composition)) for s in train_val_samples]
     folds = ds_module.make_stratified_folds(
         train_val_samples,
         n_folds=cfg["cv"]["n_folds"],
         seed=seed,
         shuffle=cfg["cv"]["shuffle"],
+        stratify_labels=dominant_labels,
     )
 
     ckpt_key  = "checkpoints_composition_dir"
