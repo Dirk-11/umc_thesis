@@ -190,10 +190,10 @@ image:
 augmentation:
   horizontal_flip_p: 0.5
   vertical_flip_p: 0.5
-  rotation_degrees: 15
-  color_jitter_brightness: 0.2
-  color_jitter_contrast: 0.2
-  color_jitter_saturation: 0.1
+  rotation_degrees: 45
+  color_jitter_brightness: 0.4
+  color_jitter_contrast: 0.4
+  color_jitter_saturation: 0.2
 
 # -----------------------------------------------------------------------------
 # Evaluation
