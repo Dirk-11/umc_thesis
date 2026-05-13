@@ -1,0 +1,15 @@
+{
+  "fold": 3,
+  "best_epoch": 6,
+  "best_val_loss": 1.9184950828552245,
+  "best_loss": 1.9184950828552245,
+  "best_accuracy": 0.25161290322580643,
+  "best_macro_f1": 0.16507667864050843,
+  "best_stone_accuracy": 0.23076923076923078,
+  "best_stone_macro_f1": 0.11836734693877551,
+  "best_stone_f1_CaOx": 0.4489795918367347,
+  "best_stone_f1_CHP": 0.0,
+  "best_stone_f1_UA": 0.14285714285714285,
+  "best_stone_f1_MAP": 0.0,
+  "best_stone_f1_CYS": 0.0
+}
