@@ -367,6 +367,10 @@ def main() -> None:
                              "the pre-labelled 'label' column.  Outputs are saved with a "
                              "'_t<value>' suffix (e.g. '_t90') so they never overwrite "
                              "the default run.")
+    parser.add_argument("--tag", type=str, default=None,
+                        help="Experiment tag appended to output directories and log files "
+                             "(e.g. --tag wd001_lrlow). Lets you run hyperparameter "
+                             "experiments without overwriting existing results.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -421,6 +425,8 @@ def main() -> None:
         ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + threshold_tag)
     if args.random_labels:
         ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+    if args.tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
     ckpt_dir = ensure_dir(ckpt_dir)
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
@@ -443,6 +449,8 @@ def main() -> None:
         suffix += "_frozen"
     if args.random_labels:
         suffix += "_random"
+    if args.tag:
+        suffix += f"_{args.tag}"
     if args.fold is None and len(all_summaries) > 1:
         df = pd.DataFrame(all_summaries)
         metric_cols = [c for c in df.columns if c.startswith("best_") and c != "best_epoch"]
