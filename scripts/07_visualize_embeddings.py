@@ -236,7 +236,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     log.info(f"Running t-SNE (perplexity={args.perplexity})...")
     tsne = TSNE(n_components=2, perplexity=args.perplexity, random_state=seed,
-                n_iter=1000, init="pca")
+                max_iter=1000, init="pca")
     embedding = tsne.fit_transform(features)
     log.info("t-SNE done.")
 
