@@ -587,14 +587,19 @@ def main() -> None:
         )
 
     test_fraction = cfg["cv"]["test_fraction"]
-    train_val_idx, test_idx = ds_module.make_test_holdout(all_samples, test_fraction, seed)
+    all_dominant = [int(np.argmax(s.composition)) for s in all_samples]
+    train_val_idx, test_idx = ds_module.make_test_holdout(
+        all_samples, test_fraction, seed, stratify_labels=all_dominant
+    )
     train_val_samples = [all_samples[i] for i in train_val_idx]
+    train_val_dominant = [all_dominant[i] for i in train_val_idx]
 
     folds = ds_module.make_stratified_folds(
         train_val_samples,
         n_folds=cfg["cv"]["n_folds"],
         seed=seed,
         shuffle=cfg["cv"]["shuffle"],
+        stratify_labels=train_val_dominant,
     )
 
     ckpt_key  = "checkpoints_composition_dir"

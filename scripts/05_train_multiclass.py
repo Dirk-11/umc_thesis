@@ -369,29 +369,30 @@ def main() -> None:
         )
     log.info(f"Classes ({len(class_names)}): {class_names}")
 
-    # Stratify on binary pure/mixed labels to produce the same folds as Models A and B
-    binary_labels = [s.binary_label for s in all_samples]
+    # Stratify on dominant mineral class — more appropriate for a multiclass model
+    # than binary pure/mixed stratification.
+    dominant_labels = [s.label for s in all_samples]
 
-    # Hold out test set — same split as Models A and B
+    # Hold out test set — stratified on dominant mineral class
     test_fraction = cfg["cv"]["test_fraction"]
     train_val_idx, test_idx = ds_module.make_test_holdout(
-        all_samples, test_fraction, seed, stratify_labels=binary_labels
+        all_samples, test_fraction, seed, stratify_labels=dominant_labels
     )
     train_val_samples = [all_samples[i] for i in train_val_idx]
-    train_val_binary  = [binary_labels[i] for i in train_val_idx]
+    train_val_dominant = [dominant_labels[i] for i in train_val_idx]
 
     if args.random_labels:
         rng = np.random.RandomState(seed)
         train_val_samples = _shuffle_labels_stone_level(train_val_samples, rng)
         log.info("--random-labels: stone-level labels have been shuffled (baseline mode)")
 
-    # Folds — same stratification as Models A and B
+    # Folds — stratified on dominant mineral class
     folds = ds_module.make_stratified_folds(
         train_val_samples,
         n_folds=cfg["cv"]["n_folds"],
         seed=seed,
         shuffle=cfg["cv"]["shuffle"],
-        stratify_labels=train_val_binary,
+        stratify_labels=train_val_dominant,
     )
 
     ckpt_dir = resolve_path(cfg, "checkpoints_multiclass_dir")

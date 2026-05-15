@@ -307,22 +307,22 @@ def main() -> None:
             f"{len({s.stone_id for s in all_samples})} stones"
         )
 
-    # Use binary labels for stratification to match Models A and B splits
-    binary_labels = [s.binary_label for s in all_samples]
+    # Stratify on dominant mineral class — matches 05_train_multiclass.py
+    dominant_labels = [s.label for s in all_samples]
 
     test_fraction = cfg["cv"]["test_fraction"]
     train_val_idx, test_idx = ds_module.make_test_holdout(
-        all_samples, test_fraction, seed, stratify_labels=binary_labels
+        all_samples, test_fraction, seed, stratify_labels=dominant_labels
     )
     train_val_samples = [all_samples[i] for i in train_val_idx]
-    train_val_binary  = [binary_labels[i] for i in train_val_idx]
+    train_val_dominant = [dominant_labels[i] for i in train_val_idx]
 
     folds = ds_module.make_stratified_folds(
         train_val_samples,
         n_folds=cfg["cv"]["n_folds"],
         seed=seed,
         shuffle=cfg["cv"]["shuffle"],
-        stratify_labels=train_val_binary,
+        stratify_labels=train_val_dominant,
     )
 
     ckpt_dir = resolve_path(cfg, "checkpoints_multiclass_dir")
