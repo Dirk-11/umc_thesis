@@ -96,7 +96,7 @@ class GradCAM:
 
 def get_target_layer(model) -> torch.nn.Module:
     name = model.backbone_name
-    if name in ("resnet50", "resnet101"):
+    if name in ("resnet18", "resnet50", "resnet101"):
         return model.backbone.layer4
     if name == "efficientnet_b0":
         return model.backbone.features[-1]

@@ -159,8 +159,8 @@ cv:
 model:
   # Backbone architecture. Options (via torchvision):
   # resnet50, resnet101, efficientnet_b0, densenet121
-  backbone: "efficientnet_b0"
-  pretrained_weights: "IMAGENET1K_V1"   # V1 only available for EfficientNet_B0
+  backbone: "resnet18"
+  pretrained_weights: "IMAGENET1K_V1"   # best available for ResNet18
   num_classes: 2                         # pure vs mixed
   dropout: 0.5
 

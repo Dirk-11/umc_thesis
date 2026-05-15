@@ -36,6 +36,15 @@ log = setup_logging("model")
 # -----------------------------------------------------------------------------
 # Backbone builders
 # -----------------------------------------------------------------------------
+def _build_resnet18(weights_str: str) -> tuple[nn.Module, int]:
+    """Returns (backbone_with_identity_head, feature_dim)."""
+    weights = getattr(models.ResNet18_Weights, weights_str)
+    net = models.resnet18(weights=weights)
+    feat_dim = net.fc.in_features
+    net.fc = nn.Identity()
+    return net, feat_dim
+
+
 def _build_resnet50(weights_str: str) -> tuple[nn.Module, int]:
     """Returns (backbone_with_identity_head, feature_dim)."""
     weights = getattr(models.ResNet50_Weights, weights_str)
@@ -70,6 +79,7 @@ def _build_densenet121(weights_str: str) -> tuple[nn.Module, int]:
 
 
 BACKBONES: dict[str, Callable[[str], tuple[nn.Module, int]]] = {
+    "resnet18": _build_resnet18,
     "resnet50": _build_resnet50,
     "resnet101": _build_resnet101,
     "efficientnet_b0": _build_efficientnet_b0,

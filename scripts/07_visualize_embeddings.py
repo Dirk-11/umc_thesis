@@ -70,7 +70,7 @@ def extract_features(
 
     # Attach hook to the last backbone layer before the head
     backbone_name = model.backbone_name
-    if backbone_name in ("resnet50", "resnet101"):
+    if backbone_name in ("resnet18", "resnet50", "resnet101"):
         hook = model.backbone.layer4.register_forward_hook(hook_fn)
     elif backbone_name == "efficientnet_b0":
         hook = model.backbone.features[-1].register_forward_hook(hook_fn)
