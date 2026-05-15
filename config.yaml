@@ -162,7 +162,7 @@ model:
   backbone: "resnet50"
   pretrained_weights: "IMAGENET1K_V2"   # best available for ResNet50
   num_classes: 2                         # pure vs mixed
-  dropout: 0.3
+  dropout: 0.5
 
 # -----------------------------------------------------------------------------
 # Training
