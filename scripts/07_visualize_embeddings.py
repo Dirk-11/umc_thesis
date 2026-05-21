@@ -1,24 +1,28 @@
 """
-07_visualize_embeddings.py — t-SNE embedding plots of backbone features.
+07_visualize_embeddings.py — UMAP/t-SNE embedding plots of backbone features.
 
-Extracts image features from a trained backbone (before the classification head),
-reduces them to 2D with t-SNE, and plots each stone colored by:
+Extracts image features from a backbone (before the classification head) and
+reduces them to 2D with UMAP (or t-SNE as fallback), colored by:
   - Pure vs mixed (Model A perspective)
   - Dominant mineral class (Model C perspective)
 
-This shows whether the backbone has learned a meaningful feature space where
-stones of the same type cluster together.
+Can compare pretrained (ImageNet only) vs fine-tuned features side by side,
+showing what the model learned during training.
 
 Outputs (figures/embeddings/):
-  tsne_binary.png      — colored by pure/mixed label
-  tsne_multiclass.png  — colored by dominant mineral class
+  umap_binary.png           — colored by pure/mixed (fine-tuned model)
+  umap_multiclass.png       — colored by mineral class (fine-tuned model)
+  umap_comparison_binary.png    — pretrained vs fine-tuned, colored by pure/mixed
+  umap_comparison_multiclass.png — pretrained vs fine-tuned, colored by mineral class
 
 Usage:
-  python scripts/07_visualize_embeddings.py              # fold 0 binary checkpoint
-  python scripts/07_visualize_embeddings.py --fold 2     # fold 2 checkpoint
-  python scripts/07_visualize_embeddings.py --tag wd001_lrlow  # tagged experiment
+  python scripts/07_visualize_embeddings.py                    # fine-tuned, fold 0
+  python scripts/07_visualize_embeddings.py --pretrained       # ImageNet weights only
+  python scripts/07_visualize_embeddings.py --compare          # side-by-side comparison
+  python scripts/07_visualize_embeddings.py --fold 2 --tag resnet18
+  python scripts/07_visualize_embeddings.py --method tsne      # use t-SNE instead of UMAP
 
-Requires: run 05_train_binary.py first.
+Requires: run 05_train_binary.py first (unless using --pretrained).
 """
 from __future__ import annotations
 
@@ -31,16 +35,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from PIL import Image
-from sklearn.manifold import TSNE
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
 
 log = setup_logging("visualize_embeddings")
 
-CLASS_NAMES = ["CaOx", "CHP", "UA", "MAP", "CYS"]
 CLASS_COLORS = ["#e41a1c", "#377eb8", "#4daf4a", "#ff7f00", "#984ea3"]
 BINARY_COLORS = ["#377eb8", "#e41a1c"]  # blue=pure, red=mixed
+
+
+# -----------------------------------------------------------------------------
+# Dimensionality reduction
+# -----------------------------------------------------------------------------
+def reduce_features(features: np.ndarray, method: str, seed: int,
+                    n_neighbors: int = 15, min_dist: float = 0.1,
+                    perplexity: float = 20) -> np.ndarray:
+    """Reduce (n_stones, feat_dim) to (n_stones, 2)."""
+    if method == "umap":
+        try:
+            import umap
+            reducer = umap.UMAP(n_components=2, n_neighbors=n_neighbors,
+                                min_dist=min_dist, random_state=seed)
+            return reducer.fit_transform(features)
+        except ImportError:
+            log.warning("umap-learn not installed — falling back to t-SNE. "
+                        "Install with: pip install umap-learn")
+            method = "tsne"
+
+    from sklearn.manifold import TSNE
+    tsne = TSNE(n_components=2, perplexity=perplexity, random_state=seed,
+                max_iter=1000, init="pca")
+    return tsne.fit_transform(features)
 
 
 # -----------------------------------------------------------------------------
@@ -52,23 +78,14 @@ def extract_features(
     transform,
     device: torch.device,
 ) -> tuple[np.ndarray, list[str]]:
-    """Extract backbone features for all samples, averaged per stone.
-
-    Returns:
-        features:  (n_stones, feature_dim) array
-        stone_ids: list of stone IDs in the same order
-    """
+    """Extract backbone features for all samples, averaged per stone."""
     model.eval()
-
-    # Hook to capture backbone output before the classification head
-    features_dict: dict[str, list] = {}
+    features_dict: dict = {}
 
     def hook_fn(module, input, output):
-        # Global average pool the spatial features → (batch, feature_dim)
         pooled = output.mean(dim=[2, 3]) if output.dim() == 4 else output
         features_dict["out"] = pooled.detach().cpu()
 
-    # Attach hook to the last backbone layer before the head
     backbone_name = model.backbone_name
     if backbone_name in ("resnet18", "resnet50", "resnet101"):
         hook = model.backbone.layer4.register_forward_hook(hook_fn)
@@ -79,7 +96,6 @@ def extract_features(
     else:
         raise ValueError(f"Unknown backbone: {backbone_name}")
 
-    # Group samples by stone
     stone_groups: dict[str, list] = {}
     for s in samples:
         stone_groups.setdefault(s.stone_id, []).append(s)
@@ -95,7 +111,6 @@ def extract_features(
                 tensor = transform(img).unsqueeze(0).to(device)
                 model(tensor)
                 stone_feats.append(features_dict["out"].squeeze(0).numpy())
-            # Average across the 3 photos of this stone
             all_features.append(np.mean(stone_feats, axis=0))
 
     hook.remove()
@@ -103,44 +118,98 @@ def extract_features(
 
 
 # -----------------------------------------------------------------------------
-# Plotting
+# Plotting helpers
 # -----------------------------------------------------------------------------
-def plot_tsne(
+def scatter_embedding(
+    ax: plt.Axes,
     embedding: np.ndarray,
     labels: list[int],
-    stone_ids: list[str],
     color_list: list[str],
     label_names: list[str],
     title: str,
-    output_path: Path,
+    method: str,
 ) -> None:
-    fig, ax = plt.subplots(figsize=(8, 6))
-
+    """Draw a single scatter plot on the given axes."""
     for label_idx, (color, name) in enumerate(zip(color_list, label_names)):
         mask = [i for i, l in enumerate(labels) if l == label_idx]
         if not mask:
             continue
         ax.scatter(
-            embedding[mask, 0],
-            embedding[mask, 1],
-            c=color,
-            label=name,
-            alpha=0.75,
-            edgecolors="white",
-            linewidths=0.4,
-            s=60,
+            embedding[mask, 0], embedding[mask, 1],
+            c=color, label=name, alpha=0.75,
+            edgecolors="white", linewidths=0.4, s=60,
         )
-
-    ax.set_title(title, fontsize=13)
-    ax.set_xlabel("t-SNE 1", fontsize=11)
-    ax.set_ylabel("t-SNE 2", fontsize=11)
-    ax.legend(fontsize=10, framealpha=0.9)
+    dim_name = "UMAP" if method == "umap" else "t-SNE"
+    ax.set_title(title, fontsize=11)
+    ax.set_xlabel(f"{dim_name} 1", fontsize=10)
+    ax.set_ylabel(f"{dim_name} 2", fontsize=10)
+    ax.legend(fontsize=9, framealpha=0.9)
     ax.set_xticks([])
     ax.set_yticks([])
+
+
+def save_single(
+    embedding: np.ndarray,
+    labels: list[int],
+    color_list: list[str],
+    label_names: list[str],
+    title: str,
+    output_path: Path,
+    method: str,
+) -> None:
+    fig, ax = plt.subplots(figsize=(8, 6))
+    scatter_embedding(ax, embedding, labels, color_list, label_names, title, method)
     fig.tight_layout()
     fig.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     log.info(f"Saved: {output_path}")
+
+
+def save_comparison(
+    emb_pre: np.ndarray,
+    emb_ft: np.ndarray,
+    labels: list[int],
+    color_list: list[str],
+    label_names: list[str],
+    output_path: Path,
+    method: str,
+    label_type: str,
+) -> None:
+    """Side-by-side pretrained vs fine-tuned plot."""
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    scatter_embedding(axes[0], emb_pre, labels, color_list, label_names,
+                      f"Pretrained (ImageNet only)", method)
+    scatter_embedding(axes[1], emb_ft, labels, color_list, label_names,
+                      f"Fine-tuned", method)
+    fig.suptitle(
+        f"Backbone feature space — {label_type} — before vs after training",
+        fontsize=13,
+    )
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    log.info(f"Saved: {output_path}")
+
+
+# -----------------------------------------------------------------------------
+# Model loading helpers
+# -----------------------------------------------------------------------------
+def load_pretrained_model(cfg: dict, device: torch.device):
+    """Build model with ImageNet weights only — no fine-tuning checkpoint."""
+    model_module = import_module("04_model_binary")
+    model = model_module.build_model(cfg).to(device)
+    log.info("Loaded pretrained (ImageNet) model — no fine-tuning checkpoint")
+    return model
+
+
+def load_finetuned_model(cfg: dict, device: torch.device, ckpt_path: Path):
+    """Build model and load fine-tuned checkpoint."""
+    model_module = import_module("04_model_binary")
+    model = model_module.build_model(cfg).to(device)
+    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
+    model.load_state_dict(checkpoint["model_state"])
+    log.info(f"Loaded fine-tuned checkpoint: {ckpt_path} (epoch {checkpoint['epoch']})")
+    return model
 
 
 # -----------------------------------------------------------------------------
@@ -151,9 +220,19 @@ def main() -> None:
     parser.add_argument("--fold", type=int, default=0,
                         help="Which fold checkpoint to use (default: 0)")
     parser.add_argument("--tag", type=str, default=None,
-                        help="Experiment tag (must match --tag used during training)")
+                        help="Experiment tag matching --tag used during training")
+    parser.add_argument("--pretrained", action="store_true",
+                        help="Use ImageNet pretrained weights only (no fine-tuning checkpoint)")
+    parser.add_argument("--compare", action="store_true",
+                        help="Generate side-by-side pretrained vs fine-tuned comparison plots")
+    parser.add_argument("--method", choices=["umap", "tsne"], default="umap",
+                        help="Dimensionality reduction method (default: umap)")
+    parser.add_argument("--n-neighbors", type=int, default=15,
+                        help="UMAP n_neighbors (default: 15)")
+    parser.add_argument("--min-dist", type=float, default=0.1,
+                        help="UMAP min_dist (default: 0.1)")
     parser.add_argument("--perplexity", type=float, default=20,
-                        help="t-SNE perplexity (default: 20, try 10-50 for small datasets)")
+                        help="t-SNE perplexity (default: 20)")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -171,109 +250,126 @@ def main() -> None:
     log.info(f"Device: {device}")
 
     # -------------------------------------------------------------------------
-    # Load binary model checkpoint
+    # Resolve checkpoint path
     # -------------------------------------------------------------------------
     ckpt_dir = resolve_path(cfg, "checkpoints_dir")
     if args.tag:
         ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
     ckpt_path = ckpt_dir / f"fold_{args.fold}" / "best.pt"
-    if not ckpt_path.exists():
-        log.error(f"No checkpoint at {ckpt_path}. Run 05_train_binary.py first.")
+
+    if not args.pretrained and not ckpt_path.exists():
+        log.error(f"No checkpoint at {ckpt_path}. Run 05_train_binary.py first "
+                  f"or use --pretrained.")
         sys.exit(1)
 
-    model_module = import_module("04_model_binary")
-    model = model_module.build_model(cfg).to(device)
-    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
-    model.load_state_dict(checkpoint["model_state"])
-    log.info(f"Loaded checkpoint: {ckpt_path} (epoch {checkpoint['epoch']})")
-
     # -------------------------------------------------------------------------
-    # Load all samples (train + val + test) for a rich embedding
+    # Load samples
     # -------------------------------------------------------------------------
     ds_module = import_module("03_dataset")
     images_csv = resolve_path(cfg, "processed_images_csv")
-
     purity_threshold = float(cfg["data"]["purity_threshold"])
     final_classes = cfg["class_remapping"]["final_classes"]
     exclude = cfg["class_remapping"].get("exclude_classes", [])
     class_names = [c for c in final_classes if c not in exclude]
 
-    # Binary samples (for pure/mixed labels)
     binary_samples = ds_module.load_image_samples(
-        images_csv,
-        require_files_exist=True,
-        purity_threshold=purity_threshold,
-        final_classes=final_classes,
+        images_csv, require_files_exist=True,
+        purity_threshold=purity_threshold, final_classes=final_classes,
     )
-
-    # Multiclass samples (for dominant mineral labels)
     multiclass_samples = ds_module.load_multiclass_samples(
-        images_csv, class_names, require_files_exist=True
+        images_csv, class_names, require_files_exist=True,
     )
     excl_idx = {i for i, c in enumerate(class_names) if c in exclude}
     multiclass_samples = [s for s in multiclass_samples if s.label not in excl_idx]
 
-    # Build stone-level label lookups
-    binary_stone_label: dict[str, int] = {}
-    for s in binary_samples:
-        binary_stone_label[s.stone_id] = s.label
-
-    multiclass_stone_label: dict[str, int] = {}
-    for s in multiclass_samples:
-        multiclass_stone_label[s.stone_id] = s.label
+    binary_stone_label = {s.stone_id: s.label for s in binary_samples}
+    multiclass_stone_label = {s.stone_id: s.label for s in multiclass_samples}
 
     eval_transform = ds_module.build_transforms(cfg, train=False)
-
-    # -------------------------------------------------------------------------
-    # Extract features using binary samples (all stones)
-    # -------------------------------------------------------------------------
-    log.info(f"Extracting features for {len({s.stone_id for s in binary_samples})} stones...")
-    features, stone_ids = extract_features(model, binary_samples, eval_transform, device)
-    log.info(f"Feature matrix: {features.shape}")
-
-    # -------------------------------------------------------------------------
-    # t-SNE
-    # -------------------------------------------------------------------------
-    log.info(f"Running t-SNE (perplexity={args.perplexity})...")
-    tsne = TSNE(n_components=2, perplexity=args.perplexity, random_state=seed,
-                max_iter=1000, init="pca")
-    embedding = tsne.fit_transform(features)
-    log.info("t-SNE done.")
-
-    # -------------------------------------------------------------------------
-    # Plot 1: colored by pure/mixed
-    # -------------------------------------------------------------------------
-    binary_labels = [binary_stone_label.get(sid, -1) for sid in stone_ids]
-    valid = [i for i, l in enumerate(binary_labels) if l >= 0]
-    emb_bin = embedding[valid]
-    lbl_bin = [binary_labels[i] for i in valid]
-
     output_dir = ensure_dir(resolve_path(cfg, "figures_dir") / "embeddings")
     suffix = f"_{args.tag}" if args.tag else ""
-
-    plot_tsne(
-        emb_bin, lbl_bin, [stone_ids[i] for i in valid],
-        color_list=BINARY_COLORS,
-        label_names=["Pure", "Mixed"],
-        title=f"t-SNE — backbone features colored by pure/mixed (fold {args.fold}){' — ' + args.tag if args.tag else ''}",
-        output_path=output_dir / f"tsne_binary{suffix}.png",
-    )
+    method = args.method
 
     # -------------------------------------------------------------------------
-    # Plot 2: colored by dominant mineral class
+    # Extract features
     # -------------------------------------------------------------------------
-    mc_labels = [multiclass_stone_label.get(sid, -1) for sid in stone_ids]
-    valid_mc = [i for i, l in enumerate(mc_labels) if l >= 0]
-    emb_mc = embedding[valid_mc]
-    lbl_mc = [mc_labels[i] for i in valid_mc]
+    def get_embedding(model) -> tuple[np.ndarray, list[str]]:
+        n_stones = len({s.stone_id for s in binary_samples})
+        log.info(f"Extracting features for {n_stones} stones...")
+        features, stone_ids = extract_features(model, binary_samples, eval_transform, device)
+        log.info(f"Feature matrix: {features.shape} — running {method.upper()}...")
+        embedding = reduce_features(
+            features, method, seed,
+            n_neighbors=args.n_neighbors,
+            min_dist=args.min_dist,
+            perplexity=args.perplexity,
+        )
+        log.info(f"{method.upper()} done.")
+        return embedding, stone_ids
 
-    plot_tsne(
-        emb_mc, lbl_mc, [stone_ids[i] for i in valid_mc],
-        color_list=CLASS_COLORS[:len(class_names)],
-        label_names=class_names,
-        title=f"t-SNE — backbone features colored by mineral class (fold {args.fold}){' — ' + args.tag if args.tag else ''}",
-        output_path=output_dir / f"tsne_multiclass{suffix}.png",
-    )
+    def get_labels(stone_ids, label_dict):
+        labels = [label_dict.get(sid, -1) for sid in stone_ids]
+        valid = [i for i, l in enumerate(labels) if l >= 0]
+        return valid, [labels[i] for i in valid]
+
+    # -------------------------------------------------------------------------
+    # Single model plots (pretrained OR fine-tuned)
+    # -------------------------------------------------------------------------
+    if not args.compare:
+        model = (load_pretrained_model(cfg, device) if args.pretrained
+                 else load_finetuned_model(cfg, device, ckpt_path))
+        embedding, stone_ids = get_embedding(model)
+        model_label = "pretrained" if args.pretrained else f"fine-tuned fold {args.fold}"
+
+        # Binary plot
+        valid, lbl = get_labels(stone_ids, binary_stone_label)
+        save_single(
+            embedding[valid], lbl, BINARY_COLORS, ["Pure", "Mixed"],
+            title=f"{method.upper()} — pure/mixed — {model_label}{' — ' + args.tag if args.tag else ''}",
+            output_path=output_dir / f"{method}_binary{'_pretrained' if args.pretrained else ''}{suffix}.png",
+            method=method,
+        )
+
+        # Multiclass plot
+        valid_mc, lbl_mc = get_labels(stone_ids, multiclass_stone_label)
+        save_single(
+            embedding[valid_mc], lbl_mc, CLASS_COLORS[:len(class_names)], class_names,
+            title=f"{method.upper()} — mineral class — {model_label}{' — ' + args.tag if args.tag else ''}",
+            output_path=output_dir / f"{method}_multiclass{'_pretrained' if args.pretrained else ''}{suffix}.png",
+            method=method,
+        )
+
+    # -------------------------------------------------------------------------
+    # Comparison plots (pretrained vs fine-tuned side by side)
+    # -------------------------------------------------------------------------
+    else:
+        log.info("=== Extracting pretrained features ===")
+        model_pre = load_pretrained_model(cfg, device)
+        emb_pre, stone_ids = get_embedding(model_pre)
+        del model_pre
+
+        log.info("=== Extracting fine-tuned features ===")
+        model_ft = load_finetuned_model(cfg, device, ckpt_path)
+        emb_ft, _ = get_embedding(model_ft)
+        del model_ft
+
+        # Binary comparison
+        valid, lbl = get_labels(stone_ids, binary_stone_label)
+        save_comparison(
+            emb_pre[valid], emb_ft[valid], lbl,
+            BINARY_COLORS, ["Pure", "Mixed"],
+            output_path=output_dir / f"{method}_comparison_binary{suffix}.png",
+            method=method, label_type="pure/mixed",
+        )
+
+        # Multiclass comparison
+        valid_mc, lbl_mc = get_labels(stone_ids, multiclass_stone_label)
+        save_comparison(
+            emb_pre[valid_mc], emb_ft[valid_mc], lbl_mc,
+            CLASS_COLORS[:len(class_names)], class_names,
+            output_path=output_dir / f"{method}_comparison_multiclass{suffix}.png",
+            method=method, label_type="mineral class",
+        )
 
     log.info("Embedding visualization complete.")
 

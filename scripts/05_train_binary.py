@@ -430,6 +430,12 @@ def main() -> None:
     ckpt_dir = ensure_dir(ckpt_dir)
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
 
+    # Save a config snapshot so we always know what settings produced this run
+    import shutil
+    config_src = Path(__file__).parent.parent / "config.yaml"
+    shutil.copy(config_src, ckpt_dir / "config_snapshot.yaml")
+    log.info(f"Config snapshot saved to {ckpt_dir / 'config_snapshot.yaml'}")
+
     # Run folds (indices are into train_val_samples)
     all_summaries: list[dict] = []
     fold_range = [args.fold] if args.fold is not None else range(len(folds))

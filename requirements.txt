@@ -64,3 +64,4 @@ matplotlib
 Pillow
 PyYAML
 openpyxl
+umap-learn
