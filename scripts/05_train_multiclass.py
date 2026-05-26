@@ -338,6 +338,10 @@ def main() -> None:
                              "(random-label sanity-check baseline). Checkpoints and logs "
                              "are saved with a '_random' suffix so they never overwrite "
                              "the real-label run.")
+    parser.add_argument("--tag", type=str, default=None,
+                        help="Experiment tag appended to checkpoint directory and log files "
+                             "(e.g. --tag resnet18_reg). Lets you run multiple configurations "
+                             "without overwriting each other.")
     args = parser.parse_args()
 
     cfg  = load_config()
@@ -398,9 +402,13 @@ def main() -> None:
     ckpt_dir = resolve_path(cfg, "checkpoints_multiclass_dir")
     if args.random_labels:
         ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+    if args.tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
     ckpt_dir = ensure_dir(ckpt_dir)
     logs_dir = ensure_dir(resolve_path(cfg, "logs_dir"))
     suffix = "_random" if args.random_labels else ""
+    if args.tag:
+        suffix += f"_{args.tag}"
 
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
     all_summaries: list[dict] = []

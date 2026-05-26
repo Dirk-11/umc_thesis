@@ -270,6 +270,10 @@ def main() -> None:
                         help="Load checkpoints from checkpoints_multiclass_random/ "
                              "(the --random-labels training run). Outputs are written "
                              "with a _random suffix.")
+    parser.add_argument("--tag", type=str, default=None,
+                        help="Experiment tag — must match the --tag used during training. "
+                             "Points evaluation at the tagged checkpoint directory and adds "
+                             "the tag to all output filenames.")
     args = parser.parse_args()
 
     cfg  = load_config()
@@ -328,8 +332,14 @@ def main() -> None:
     ckpt_dir = resolve_path(cfg, "checkpoints_multiclass_dir")
     if args.random_labels:
         ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + "_random")
+    if args.tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
     suffix    = "_random" if args.random_labels else ""
+    if args.tag:
+        suffix += f"_{args.tag}"
     title_tag = " — random-label baseline" if args.random_labels else ""
+    if args.tag:
+        title_tag += f" — {args.tag}"
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir    = ensure_dir(resolve_path(cfg, "logs_dir"))
 

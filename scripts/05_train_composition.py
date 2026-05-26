@@ -438,10 +438,16 @@ def main() -> None:
                              "(random-label sanity-check baseline). Checkpoints and logs "
                              "are saved with a '_random' suffix so they never overwrite "
                              "the real-label run.")
+    parser.add_argument("--tag", type=str, default=None,
+                        help="Experiment tag appended to checkpoint directory and log files "
+                             "(e.g. --tag resnet18_reg). Lets you run multiple configurations "
+                             "without overwriting each other.")
     args = parser.parse_args()
     model_type = args.model
     # model_type_tag is used for all file naming so random runs never overwrite real runs
     model_type_tag = f"{model_type}_random" if args.random_labels else model_type
+    if args.tag:
+        model_type_tag = f"{model_type_tag}_{args.tag}"
 
     cfg  = load_config()
     seed = cfg["project"]["seed"]
@@ -514,7 +520,10 @@ def main() -> None:
     )
 
     ckpt_key  = "checkpoints_composition_dir"
-    ckpt_dir  = ensure_dir(resolve_path(cfg, ckpt_key))
+    ckpt_dir  = resolve_path(cfg, ckpt_key)
+    if args.tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
+    ckpt_dir  = ensure_dir(ckpt_dir)
     logs_dir  = ensure_dir(resolve_path(cfg, "logs_dir"))
     log.info(f"Model type: {model_type_tag}  |  checkpoints → {ckpt_dir}")
 

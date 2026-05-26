@@ -535,11 +535,19 @@ def main() -> None:
     parser.add_argument("--random-labels", action="store_true",
                         help="Load checkpoints trained with --random-labels. Checkpoint names "
                              "and all output files use the '_random' suffix automatically.")
+    parser.add_argument("--tag", type=str, default=None,
+                        help="Experiment tag — must match the --tag used during training. "
+                             "Points evaluation at the tagged checkpoint directory and adds "
+                             "the tag to all output filenames.")
     args = parser.parse_args()
     model_type = args.model
     # model_type_tag drives all file naming; random runs get a distinct tag
     model_type_tag = f"{model_type}_random" if args.random_labels else model_type
+    if args.tag:
+        model_type_tag = f"{model_type_tag}_{args.tag}"
     title_tag = " — random-label baseline" if args.random_labels else ""
+    if args.tag:
+        title_tag += f" — {args.tag}"
 
     cfg = load_config()
     seed = cfg["project"]["seed"]
@@ -604,6 +612,8 @@ def main() -> None:
 
     ckpt_key  = "checkpoints_composition_dir"
     ckpt_dir  = resolve_path(cfg, ckpt_key)
+    if args.tag:
+        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
     figures_dir = ensure_dir(resolve_path(cfg, "figures_dir"))
     logs_dir    = ensure_dir(resolve_path(cfg, "logs_dir"))
     p = model_type_tag  # short alias for filenames (includes _random when applicable)
