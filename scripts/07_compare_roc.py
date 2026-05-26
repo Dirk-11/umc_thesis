@@ -47,18 +47,34 @@ def compute_mean_roc(
     stone_df: pd.DataFrame,
     n_points: int = 200,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
-    """Compute mean ± std ROC curve across folds from a per-stone prediction DataFrame.
+    """Compute mean ± std ROC curve from a per-stone prediction DataFrame.
 
-    stone_df must have columns: fold, label, prob_mixed.
+    If a 'fold' column is present, computes per-fold ROC curves and returns
+    mean ± std across folds (used for cross-validation val set predictions).
+
+    If no 'fold' column, computes a single ROC curve with std=0 (used for
+    the aggregated test set predictions where folds are already averaged).
 
     Returns:
         mean_fpr:  (n_points,) common FPR grid
         mean_tpr:  (n_points,) mean TPR
-        std_tpr:   (n_points,) std of TPR across folds
+        std_tpr:   (n_points,) std of TPR (zeros when no fold column)
         mean_auc:  scalar mean AUC
-        std_auc:   scalar std AUC
+        std_auc:   scalar std AUC (0.0 when no fold column)
     """
     mean_fpr = np.linspace(0, 1, n_points)
+
+    # No fold column — single aggregated curve (e.g. test set)
+    if "fold" not in stone_df.columns:
+        if stone_df["label"].nunique() < 2:
+            raise ValueError("Only one class present — cannot compute ROC curve.")
+        fpr, tpr, _ = roc_curve(stone_df["label"], stone_df["prob_mixed"])
+        auc_val = auc(fpr, tpr)
+        interp_tpr = np.interp(mean_fpr, fpr, tpr)
+        interp_tpr[0] = 0.0
+        interp_tpr[-1] = 1.0
+        return mean_fpr, interp_tpr, np.zeros_like(interp_tpr), auc_val, 0.0
+
     interp_tprs: list[np.ndarray] = []
     fold_aucs: list[float] = []
 
@@ -177,7 +193,7 @@ def main() -> None:
             sys.exit(1)
 
         stone_df = pd.read_csv(csv_path)
-        required_cols = {"fold", "label", "prob_mixed"}
+        required_cols = {"label", "prob_mixed"}
         if not required_cols.issubset(stone_df.columns):
             log.error(
                 f"CSV {csv_path} is missing columns {required_cols - set(stone_df.columns)}"
