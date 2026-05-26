@@ -83,6 +83,13 @@ def compute_moe_metrics(
     metrics[f"{prefix}dominant_macro_f1"] = float(
         f1_score(dominant_true, dominant_pred, average="macro", zero_division=0)
     )
+    per_class_f1 = f1_score(
+        dominant_true, dominant_pred,
+        labels=list(range(len(class_names))),
+        average=None, zero_division=0,
+    )
+    for cls, val in zip(class_names, per_class_f1):
+        metrics[f"{prefix}dominant_f1_{cls}"] = float(val)
     metrics[f"{prefix}aitchison"] = aitchison_distance(pred, true)
     return metrics
 
@@ -690,6 +697,13 @@ def main() -> None:
                     f"{cv_summary.at[metric, 'mean']:.4f} ± "
                     f"{cv_summary.at[metric, 'std']:.4f}"
                 )
+        log.info("  Per-class F1 — dominant component (stone-level, mean ± std):")
+        log.info(f"  {'Class':<10} {'F1':>6}  {'Std':>6}")
+        log.info(f"  {'-'*26}")
+        for c in final_classes:
+            m = f"stone_dominant_f1_{c}"
+            if m in cv_summary.index:
+                log.info(f"  {c:<10} {cv_summary.at[m, 'mean']:>6.3f}  {cv_summary.at[m, 'std']:>6.3f}")
 
     # Figures — val
     if cv_summary is not None:
@@ -754,6 +768,13 @@ def main() -> None:
                         f"{test_summary.at[metric, 'mean']:.4f} ± "
                         f"{test_summary.at[metric, 'std']:.4f}"
                     )
+            log.info("  Per-class F1 — dominant component (stone-level, mean ± std):")
+            log.info(f"  {'Class':<10} {'F1':>6}  {'Std':>6}")
+            log.info(f"  {'-'*26}")
+            for c in final_classes:
+                m = f"stone_dominant_f1_{c}"
+                if m in test_summary.index:
+                    log.info(f"  {c:<10} {test_summary.at[m, 'mean']:>6.3f}  {test_summary.at[m, 'std']:>6.3f}")
             plot_mae_bars(test_summary, final_classes,
                           figures_dir / f"{p}_mae_bars_test.png",
                           title=f"Per-class MAE — stone level (held-out test set) [{p}]{title_tag}")

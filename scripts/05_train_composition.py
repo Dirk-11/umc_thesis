@@ -159,6 +159,13 @@ def compute_compositional_metrics(
     metrics[f"{prefix}dominant_macro_f1"] = float(
         f1_score(dominant_true, dominant_pred, average="macro", zero_division=0)
     )
+    per_class_f1 = f1_score(
+        dominant_true, dominant_pred,
+        labels=list(range(len(class_names))),
+        average=None, zero_division=0,
+    )
+    for cls, val in zip(class_names, per_class_f1):
+        metrics[f"{prefix}dominant_f1_{cls}"] = float(val)
     metrics[f"{prefix}aitchison"] = aitchison_distance(pred, true)
 
     return metrics
