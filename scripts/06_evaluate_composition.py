@@ -48,6 +48,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+from sklearn.metrics import f1_score
 
 sys.path.insert(0, str(Path(__file__).parent))
 from utils import ensure_dir, load_config, resolve_path, setup_logging
@@ -76,8 +77,11 @@ def compute_moe_metrics(
     metrics = {f"{prefix}mae_overall": float(mae_per_class.mean())}
     for cls, mae in zip(class_names, mae_per_class):
         metrics[f"{prefix}mae_{cls}"] = float(mae)
-    metrics[f"{prefix}dominant_acc"] = float(
-        (pred.argmax(axis=1) == true.argmax(axis=1)).mean()
+    dominant_pred = pred.argmax(axis=1)
+    dominant_true = true.argmax(axis=1)
+    metrics[f"{prefix}dominant_acc"] = float((dominant_pred == dominant_true).mean())
+    metrics[f"{prefix}dominant_macro_f1"] = float(
+        f1_score(dominant_true, dominant_pred, average="macro", zero_division=0)
     )
     metrics[f"{prefix}aitchison"] = aitchison_distance(pred, true)
     return metrics
@@ -674,9 +678,9 @@ def main() -> None:
         log.info(f"Saved: {logs_dir / f'eval_{p}_cv_summary.csv'}")
         log.info("Cross-fold validation results:")
         for metric in [
-            "stone_mae_overall", "stone_dominant_acc", "stone_aitchison",
-            "det_f1_macro", "det_precision_macro", "det_recall_macro",
-            "quant_mae_overall",
+            "stone_mae_overall", "stone_dominant_acc", "stone_dominant_macro_f1",
+            "stone_aitchison", "det_f1_macro", "det_precision_macro",
+            "det_recall_macro", "quant_mae_overall",
         ]:
             if metric in cv_summary.index:
                 log.info(
@@ -738,9 +742,9 @@ def main() -> None:
             log.info(f"Saved: {logs_dir / f'eval_{p}_test_summary.csv'}")
             log.info("Test set results (mean ± std across folds):")
             for metric in [
-                "stone_mae_overall", "stone_dominant_acc", "stone_aitchison",
-                "det_f1_macro", "det_precision_macro", "det_recall_macro",
-                "quant_mae_overall",
+                "stone_mae_overall", "stone_dominant_acc", "stone_dominant_macro_f1",
+                "stone_aitchison", "det_f1_macro", "det_precision_macro",
+                "det_recall_macro", "quant_mae_overall",
             ]:
                 if metric in test_summary.index:
                     log.info(

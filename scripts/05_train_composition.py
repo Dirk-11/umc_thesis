@@ -44,6 +44,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+from sklearn.metrics import f1_score
 from torch import nn
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -155,6 +156,9 @@ def compute_compositional_metrics(
     dominant_pred = pred.argmax(axis=1)
     dominant_true = true.argmax(axis=1)
     metrics[f"{prefix}dominant_acc"] = float((dominant_pred == dominant_true).mean())
+    metrics[f"{prefix}dominant_macro_f1"] = float(
+        f1_score(dominant_true, dominant_pred, average="macro", zero_division=0)
+    )
     metrics[f"{prefix}aitchison"] = aitchison_distance(pred, true)
 
     return metrics
