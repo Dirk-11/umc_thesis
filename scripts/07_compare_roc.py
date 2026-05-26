@@ -201,8 +201,8 @@ def main() -> None:
             sys.exit(1)
 
         n_stones = stone_df["stone_id"].nunique() if "stone_id" in stone_df.columns else len(stone_df)
-        n_folds = stone_df["fold"].nunique()
-        log.info(f"Run '{label}' (suffix='{suffix}'): {n_stones} stones, {n_folds} folds")
+        n_folds = stone_df["fold"].nunique() if "fold" in stone_df.columns else 1
+        log.info(f"Run '{label}' (suffix='{suffix}'): {n_stones} stones, {n_folds} fold(s)")
 
         try:
             mean_fpr, mean_tpr, std_tpr, mean_auc, std_auc = compute_mean_roc(stone_df)
