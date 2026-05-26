@@ -217,20 +217,20 @@ evaluation:
 # and cross-entropy loss.
 # -----------------------------------------------------------------------------
 model_multiclass:
-  backbone: "resnet50"
-  pretrained_weights: "IMAGENET1K_V2"
+  backbone: "resnet18"
+  pretrained_weights: "IMAGENET1K_V1"
   num_classes: 6      # one per final_class (CaOx, CHP, UA, MAP, CYS, OTH)
-  dropout: 0.3
+  dropout: 0.5
 
 # -----------------------------------------------------------------------------
 # Model B — Compositional regression with multi-label detection
 # -----------------------------------------------------------------------------
 model_composition:
-  backbone: "resnet50"
-  pretrained_weights: "IMAGENET1K_V2"
+  backbone: "resnet18"
+  pretrained_weights: "IMAGENET1K_V1"
   head_hidden_dim: 128
   aux_head_hidden_dim: 128
-  head_dropout: 0.3
+  head_dropout: 0.5
   # Optional: path to a Model A fold checkpoint to warm-start the backbone.
   # e.g. "outputs/checkpoints/fold_0/best.pt". null = use ImageNet weights only.
   warm_start_from: null
@@ -243,8 +243,8 @@ training_composition:
   epochs_frozen: 5        # train only the heads with frozen backbone
   epochs_finetune: 25     # then fine-tune backbone too
   learning_rate_head: 0.001
-  learning_rate_backbone: 0.0001
-  weight_decay: 0.0001
+  learning_rate_backbone: 0.00001
+  weight_decay: 0.001
   early_stopping_patience: 7
   loss: "kl"              # "kl" (KL divergence), "l1", or "mse"
   aux_loss_weight: 0.3    # weight for presence/absence detection BCE loss
@@ -263,6 +263,6 @@ training_multiclass:
   epochs_frozen: 5
   epochs_finetune: 20
   learning_rate_head: 0.001
-  learning_rate_backbone: 0.0001
-  weight_decay: 0.0001
+  learning_rate_backbone: 0.00001
+  weight_decay: 0.001
   early_stopping_patience: 5
