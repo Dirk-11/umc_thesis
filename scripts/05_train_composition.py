@@ -493,6 +493,8 @@ def main() -> None:
             trimmed.append(dataclasses.replace(s, composition=comp))
         all_samples = trimmed
         final_classes = [c for c in final_classes if c not in exclude]
+        # Update cfg so build_composition_model uses the trimmed class list
+        cfg["class_remapping"]["final_classes"] = final_classes
         log.info(
             f"Excluded classes {exclude} → {len(final_classes)} classes remaining, "
             f"{len({s.stone_id for s in all_samples})} stones"
