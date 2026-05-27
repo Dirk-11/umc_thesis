@@ -13,7 +13,7 @@ CPUS=9
 PROJECT_DIR="$HOME/umc_thesis"   # absolute path on Snellius
 LOG_DIR="$PROJECT_DIR/outputs/logs"
 # If you use a venv, set this; otherwise use the module system
-PYTHON="python"                   # e.g. "$HOME/venv/bin/python"
+PYTHON="python"
 # ─────────────────────────────────────────────────────────────────────────────
 
 mkdir -p "$LOG_DIR"

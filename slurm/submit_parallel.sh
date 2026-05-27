@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-CONDA_ENV="kidney_stone"   # <-- update if your env has a different name
+CONDA_ENV="umc_thesis"
 PROJECT_DIR="$HOME/umc_thesis"
 LOG_DIR="$PROJECT_DIR/outputs/logs"
 

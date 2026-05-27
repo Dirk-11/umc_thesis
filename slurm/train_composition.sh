@@ -10,7 +10,7 @@
 #SBATCH --output=outputs/logs/composition_%j.out
 #SBATCH --error=outputs/logs/composition_%j.err
 
-CONDA_ENV="kidney_stone"   # <-- update if your env has a different name
+CONDA_ENV="umc_thesis"
 
 module load 2023
 module load Anaconda3
