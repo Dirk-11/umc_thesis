@@ -398,6 +398,13 @@ def main() -> None:
                     f"  {metric}: "
                     f"{summary.at[metric, 'mean']:.3f} ± {summary.at[metric, 'std']:.3f}"
                 )
+        log.info("  Per-class F1 (stone-level, mean ± std):")
+        log.info(f"  {'Class':<10} {'F1':>6}  {'Std':>6}")
+        log.info(f"  {'-'*26}")
+        for c in class_names:
+            m = f"stone_f1_{c}"
+            if m in summary.index:
+                log.info(f"  {c:<10} {summary.at[m, 'mean']:>6.3f}  {summary.at[m, 'std']:>6.3f}")
 
     # -------------------------------------------------------------------------
     # Aggregated confusion matrix (CV, all folds combined)
@@ -462,6 +469,13 @@ def main() -> None:
                         f"{test_summary.at[metric, 'mean']:.3f} ± "
                         f"{test_summary.at[metric, 'std']:.3f}"
                     )
+            log.info("  Per-class F1 (stone-level, mean ± std):")
+            log.info(f"  {'Class':<10} {'F1':>6}  {'Std':>6}")
+            log.info(f"  {'-'*26}")
+            for c in class_names:
+                m = f"stone_f1_{c}"
+                if m in test_summary.index:
+                    log.info(f"  {c:<10} {test_summary.at[m, 'mean']:>6.3f}  {test_summary.at[m, 'std']:>6.3f}")
 
         # Confusion matrix on ensemble test predictions
         cm_test = confusion_matrix(
