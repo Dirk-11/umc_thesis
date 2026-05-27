@@ -328,12 +328,15 @@ def make_dataloader(
     subset = [samples[i] for i in indices]
     transform = build_transforms(cfg, train=train)
     dataset = KidneyStoneDataset(subset, transform)
+    n_workers = cfg["training"]["num_workers"]
     return DataLoader(
         dataset,
         batch_size=cfg["training"]["batch_size"],
         shuffle=train,
-        num_workers=cfg["training"]["num_workers"],
+        num_workers=n_workers,
         pin_memory=cfg["training"]["device"] != "cpu",
+        persistent_workers=n_workers > 0,
+        prefetch_factor=4 if n_workers > 0 else None,
         drop_last=False,
     )
 
@@ -438,12 +441,15 @@ def make_compositional_dataloader(
     transform = build_transforms(cfg, train=train)
     tcfg = cfg["training_composition"]
     dataset = CompositionalKidneyStoneDataset(subset, transform)
+    n_workers = tcfg["num_workers"]
     return DataLoader(
         dataset,
         batch_size=tcfg["batch_size"],
         shuffle=train,
-        num_workers=tcfg["num_workers"],
+        num_workers=n_workers,
         pin_memory=tcfg["device"] != "cpu",
+        persistent_workers=n_workers > 0,
+        prefetch_factor=4 if n_workers > 0 else None,
         drop_last=False,
     )
 
@@ -554,12 +560,15 @@ def make_multiclass_dataloader(
     transform = build_transforms(cfg, train=train)
     tcfg = cfg["training_multiclass"]
     dataset = MulticlassKidneyStoneDataset(subset, transform)
+    n_workers = tcfg["num_workers"]
     return DataLoader(
         dataset,
         batch_size=tcfg["batch_size"],
         shuffle=train,
-        num_workers=tcfg["num_workers"],
+        num_workers=n_workers,
         pin_memory=tcfg["device"] != "cpu",
+        persistent_workers=n_workers > 0,
+        prefetch_factor=4 if n_workers > 0 else None,
         drop_last=False,
     )
 
