@@ -467,6 +467,9 @@ def main() -> None:
 
     device = resolve_device(cfg["training_composition"]["device"])
     log.info(f"Device: {device}")
+    if torch.cuda.is_available() and cfg["training_composition"].get("cudnn_benchmark", False):
+        torch.backends.cudnn.benchmark = True
+        log.info("cuDNN benchmark enabled")
 
     # Load compositional samples
     ds_module    = import_module("03_dataset")

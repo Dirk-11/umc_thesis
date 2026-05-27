@@ -382,6 +382,9 @@ def main() -> None:
 
     device = resolve_device(cfg["training"]["device"])
     log.info(f"Device: {device}")
+    if torch.cuda.is_available() and cfg["training"].get("cudnn_benchmark", False):
+        torch.backends.cudnn.benchmark = True
+        log.info("cuDNN benchmark enabled")
 
     # Resolve purity threshold: CLI flag overrides config
     purity_threshold = args.purity_threshold

@@ -351,6 +351,9 @@ def main() -> None:
 
     device = resolve_device(cfg["training_multiclass"]["device"])
     log.info(f"Device: {device}")
+    if torch.cuda.is_available() and cfg["training_multiclass"].get("cudnn_benchmark", False):
+        torch.backends.cudnn.benchmark = True
+        log.info("cuDNN benchmark enabled")
 
     class_names = cfg["class_remapping"]["final_classes"]
 
