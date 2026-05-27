@@ -9,6 +9,8 @@
 #SBATCH --time=06:00:00
 #SBATCH --output=outputs/logs/composition_%j.out
 #SBATCH --error=outputs/logs/composition_%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=d5.de.boer@student.vu.nl
 
 CONDA_ENV="umc_thesis"
 
