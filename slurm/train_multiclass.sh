@@ -15,9 +15,8 @@
 CONDA_ENV="umc_thesis"
 
 module load 2023
-module load Anaconda3
 
-eval "$(conda shell.bash hook)"
+source /sw/arch/RHEL8/EB_production/2023/software/Anaconda3/2023.07-2/etc/profile.d/conda.sh
 conda activate "$CONDA_ENV"
 
 echo "=== GPU info ==="
