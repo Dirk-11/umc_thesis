@@ -73,7 +73,7 @@ sbatch \
     --job-name="roc_compare" \
     --partition=gpu_a100 \
     --nodes=1 --ntasks=1 \
-    --cpus-per-task=2 \
+    --cpus-per-task=2 --gpus=1 \
     --mem=4G \
     --time=00:10:00 \
     --output="$LOG_DIR/roc_compare_%j.out" \
