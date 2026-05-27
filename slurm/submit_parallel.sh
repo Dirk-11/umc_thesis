@@ -13,7 +13,7 @@ mkdir -p "$LOG_DIR"
 
 # Preamble injected into every --wrap eval job
 SETUP="module load 2023 && module load Anaconda3 \
-  && source \$(conda info --base)/etc/profile.d/conda.sh \
+  && eval \"\$(conda shell.bash hook)\" \
   && conda activate $CONDA_ENV \
   && cd $PROJECT_DIR"
 
