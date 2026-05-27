@@ -12,8 +12,7 @@ LOG_DIR="$PROJECT_DIR/outputs/logs"
 mkdir -p "$LOG_DIR"
 
 # Preamble injected into every --wrap eval job
-SETUP="module load 2023 \
-  && source /sw/arch/RHEL8/EB_production/2023/software/Anaconda3/2023.07-2/etc/profile.d/conda.sh \
+SETUP="eval \"\$(/sw/arch/RHEL8/EB_production/2023/software/Anaconda3/2023.07-2/bin/conda shell.bash hook)\" \
   && conda activate $CONDA_ENV \
   && cd $PROJECT_DIR"
 
