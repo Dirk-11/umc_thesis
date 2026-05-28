@@ -169,7 +169,7 @@ model:
 # -----------------------------------------------------------------------------
 training:
   device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
-  batch_size: 128
+  batch_size: 64
   num_workers: 8
   cudnn_benchmark: true
   epochs_frozen: 5         # train only the head with frozen backbone
@@ -239,7 +239,7 @@ model_composition:
 
 training_composition:
   device: "cuda"           # "mps" for Apple Silicon, "cuda" for NVIDIA, "cpu" fallback
-  batch_size: 128
+  batch_size: 64
   num_workers: 8
   cudnn_benchmark: true
   epochs_frozen: 5        # train only the heads with frozen backbone
@@ -260,7 +260,7 @@ evaluation_composition:
 # -----------------------------------------------------------------------------
 training_multiclass:
   device: "cuda"
-  batch_size: 128
+  batch_size: 64
   num_workers: 8
   cudnn_benchmark: true
   epochs_frozen: 5

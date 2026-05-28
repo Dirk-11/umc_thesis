@@ -1,0 +1,60 @@
+17:56:06 | INFO | Device: cuda
+17:56:09 | WARNING | Skipped 6 rows whose image files are missing
+17:56:09 | INFO | Built 993 multiclass samples from 333 stones. Primary component distribution: CaOx=443, CHP=301, UA=97, MAP=36, CYS=104, OTH=12
+17:56:09 | INFO | Excluded classes ['OTH'] → 5 classes remaining, 329 stones
+17:56:09 | INFO | Test holdout: 66 stones (30 pure / 36 mixed, 198 images). Train+val pool: 263 stones (783 images).
+17:56:09 | INFO |   Fold 0: train=210 stones (95 pure / 115 mixed, 625 images), val=53 stones (23 pure / 30 mixed, 158 images)
+17:56:09 | INFO |   Fold 1: train=210 stones (94 pure / 116 mixed, 627 images), val=53 stones (24 pure / 29 mixed, 156 images)
+17:56:09 | INFO |   Fold 2: train=210 stones (94 pure / 116 mixed, 625 images), val=53 stones (24 pure / 29 mixed, 158 images)
+17:56:09 | INFO |   Fold 3: train=211 stones (94 pure / 117 mixed, 628 images), val=52 stones (24 pure / 28 mixed, 155 images)
+17:56:09 | INFO |   Fold 4: train=211 stones (95 pure / 116 mixed, 627 images), val=52 stones (23 pure / 29 mixed, 156 images)
+17:56:10 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/training_curves_multiclass_random.png
+17:56:10 | INFO | Fold 0: loaded checkpoint from epoch 5 (val_loss=1.6257)
+17:56:27 | INFO |   Stone-level — acc=0.189  macro_f1=0.151
+17:56:28 | INFO | Fold 1: loaded checkpoint from epoch 8 (val_loss=1.5516)
+17:56:44 | INFO |   Stone-level — acc=0.283  macro_f1=0.165
+17:56:45 | INFO | Fold 2: loaded checkpoint from epoch 5 (val_loss=1.6776)
+17:57:01 | INFO |   Stone-level — acc=0.151  macro_f1=0.191
+17:57:01 | INFO | Fold 3: loaded checkpoint from epoch 5 (val_loss=1.6112)
+17:57:18 | INFO |   Stone-level — acc=0.135  macro_f1=0.134
+17:57:18 | INFO | Fold 4: loaded checkpoint from epoch 6 (val_loss=1.6120)
+17:57:34 | INFO |   Stone-level — acc=0.346  macro_f1=0.169
+17:57:35 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_cv_summary_multiclass_random.csv
+17:57:35 | INFO | Cross-fold results:
+17:57:35 | INFO |   stone_accuracy: 0.221 ± 0.091
+17:57:35 | INFO |   stone_macro_f1: 0.162 ± 0.021
+17:57:35 | INFO |   Per-class F1 (stone-level, mean ± std):
+17:57:35 | INFO |   Class          F1     Std
+17:57:35 | INFO |   --------------------------
+17:57:35 | INFO |   CaOx        0.272   0.268
+17:57:35 | INFO |   CHP         0.180   0.170
+17:57:35 | INFO |   UA          0.080   0.084
+17:57:35 | INFO |   MAP         0.035   0.049
+17:57:35 | INFO |   CYS         0.244   0.144
+17:57:35 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/confusion_matrix_multiclass_random.png
+17:57:35 | INFO | === Held-out test set evaluation ===
+17:57:35 | INFO | Fold 0: loaded checkpoint from epoch 5 (val_loss=1.6257)
+17:57:52 | INFO |   Stone-level — acc=0.121  macro_f1=0.117
+17:57:52 | INFO | Fold 1: loaded checkpoint from epoch 8 (val_loss=1.5516)
+17:58:09 | INFO |   Stone-level — acc=0.197  macro_f1=0.148
+17:58:09 | INFO | Fold 2: loaded checkpoint from epoch 5 (val_loss=1.6776)
+17:58:26 | INFO |   Stone-level — acc=0.212  macro_f1=0.205
+17:58:26 | INFO | Fold 3: loaded checkpoint from epoch 5 (val_loss=1.6112)
+17:58:43 | INFO |   Stone-level — acc=0.197  macro_f1=0.200
+17:58:43 | INFO | Fold 4: loaded checkpoint from epoch 6 (val_loss=1.6120)
+17:59:00 | INFO |   Stone-level — acc=0.379  macro_f1=0.235
+17:59:00 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_test_stone_predictions_multiclass_random.csv
+17:59:00 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_test_summary_multiclass_random.csv
+17:59:00 | INFO | Test set results (mean ± std across folds):
+17:59:00 | INFO |   stone_accuracy: 0.221 ± 0.095
+17:59:00 | INFO |   stone_macro_f1: 0.181 ± 0.048
+17:59:00 | INFO |   Per-class F1 (stone-level, mean ± std):
+17:59:00 | INFO |   Class          F1     Std
+17:59:00 | INFO |   --------------------------
+17:59:00 | INFO |   CaOx        0.228   0.203
+17:59:00 | INFO |   CHP         0.215   0.098
+17:59:00 | INFO |   UA          0.093   0.128
+17:59:00 | INFO |   MAP         0.037   0.051
+17:59:00 | INFO |   CYS         0.331   0.097
+17:59:00 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/confusion_matrix_test_multiclass_random.png
+17:59:00 | INFO | Evaluation complete.
