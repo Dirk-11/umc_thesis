@@ -251,7 +251,11 @@ def main() -> None:
         device = torch.device("cpu")
     log.info(f"Device: {device}")
 
-    class_names = cfg["class_remapping"]["final_classes"]
+    final_classes = cfg["class_remapping"]["final_classes"]
+    exclude = cfg["class_remapping"].get("exclude_classes", [])
+    final_classes = [c for c in final_classes if c not in exclude]
+    cfg["class_remapping"]["final_classes"] = final_classes
+    class_names = final_classes
 
     # Load model
     ckpt_dir  = resolve_path(cfg, "checkpoints_composition_dir")
