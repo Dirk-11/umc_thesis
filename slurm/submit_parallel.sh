@@ -80,5 +80,14 @@ sbatch \
     --wrap="$SETUP && python scripts/07_compare_roc.py \
         --runs '100% purity:' '90% purity:_t90' 'Random:_random'"
 
+# ── F1 summary table (after all evals) ───────────────────────────────────────
+ALL_EVAL="${JID_A_EVAL_MAIN}:${JID_B_EVAL_MAIN}:${JID_C_EVAL_MAIN}:${JID_C_EVAL_RAND}"
+submit_eval "f1_summary" "$ALL_EVAL" \
+    "python scripts/08_summary_table.py"
+
+# ── UMAP (after Model C eval — needs multiclass checkpoints) ─────────────────
+submit_eval "umap" "$JID_C_EVAL_MAIN" \
+    "python scripts/08_umap.py && python scripts/08_umap.py --test"
+
 echo ""
 echo "All jobs submitted. Monitor with: squeue -u \$USER"
