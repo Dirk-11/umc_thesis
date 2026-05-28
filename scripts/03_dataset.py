@@ -46,6 +46,23 @@ INT_TO_LABEL = {v: k for k, v in LABEL_TO_INT.items()}
 # -----------------------------------------------------------------------------
 # Transforms
 # -----------------------------------------------------------------------------
+class MaskBackground:
+    """Zero out near-black background pixels before normalization.
+
+    Kidney stone images are photographed on a black plate.  Pixels whose mean
+    RGB value (in [0, 1]) is below `threshold` are background and get zeroed
+    so the model cannot learn spurious background features.  Applied after
+    ToTensor and before Normalize.
+    """
+
+    def __init__(self, threshold: float = 20 / 255):
+        self.threshold = threshold
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        mask = tensor.mean(dim=0, keepdim=True) > self.threshold
+        return tensor * mask
+
+
 def build_transforms(cfg: dict, train: bool) -> transforms.Compose:
     """Build the torchvision transform pipeline from config.
 
@@ -73,6 +90,7 @@ def build_transforms(cfg: dict, train: bool) -> transforms.Compose:
 
     base += [
         transforms.ToTensor(),
+        MaskBackground(),
         transforms.Normalize(mean=img_cfg["mean"], std=img_cfg["std"]),
     ]
     return transforms.Compose(base)
