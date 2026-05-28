@@ -51,7 +51,16 @@ BINARY_COLORS = ["#377eb8", "#e41a1c"]  # blue=pure, red=mixed
 def reduce_features(features: np.ndarray, method: str, seed: int,
                     n_neighbors: int = 15, min_dist: float = 0.1,
                     perplexity: float = 20) -> np.ndarray:
-    """Reduce (n_stones, feat_dim) to (n_stones, 2)."""
+    """Reduce (n_stones, feat_dim) to (n_stones, 2).
+
+    Always applies PCA to 50 components first — reduces noise and makes UMAP/t-SNE
+    faster and more stable on high-dimensional backbone features.
+    """
+    from sklearn.decomposition import PCA
+    n_components = min(50, features.shape[0] - 1, features.shape[1])
+    features = PCA(n_components=n_components, random_state=seed).fit_transform(features)
+    log.info(f"PCA → {features.shape[1]} components")
+
     if method == "umap":
         try:
             import umap
@@ -203,12 +212,28 @@ def load_pretrained_model(cfg: dict, device: torch.device):
 
 
 def load_finetuned_model(cfg: dict, device: torch.device, ckpt_path: Path):
-    """Build model and load fine-tuned checkpoint."""
+    """Build Model A and load fine-tuned checkpoint."""
     model_module = import_module("04_model_binary")
     model = model_module.build_model(cfg).to(device)
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model_state"])
     log.info(f"Loaded fine-tuned checkpoint: {ckpt_path} (epoch {checkpoint['epoch']})")
+    return model
+
+
+def load_finetuned_multiclass_model(cfg: dict, device: torch.device, ckpt_path: Path):
+    """Build Model C (multiclass) and load fine-tuned checkpoint."""
+    model_module = import_module("04_model_binary")
+    mc_cfg = cfg["model_multiclass"]
+    model = model_module.StoneClassifier(
+        backbone_name=mc_cfg["backbone"],
+        weights=mc_cfg["pretrained_weights"],
+        num_classes=mc_cfg["num_classes"],
+        dropout=mc_cfg["dropout"],
+    ).to(device)
+    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
+    model.load_state_dict(checkpoint["model_state"])
+    log.info(f"Loaded multiclass checkpoint: {ckpt_path} (epoch {checkpoint['epoch']})")
     return model
 
 
@@ -250,15 +275,18 @@ def main() -> None:
     log.info(f"Device: {device}")
 
     # -------------------------------------------------------------------------
-    # Resolve checkpoint path
+    # Resolve checkpoint paths (Model A for binary plot, Model C for mineral plot)
     # -------------------------------------------------------------------------
-    ckpt_dir = resolve_path(cfg, "checkpoints_dir")
+    ckpt_dir_a = resolve_path(cfg, "checkpoints_dir")
     if args.tag:
-        ckpt_dir = ckpt_dir.parent / (ckpt_dir.name + f"_{args.tag}")
-    ckpt_path = ckpt_dir / f"fold_{args.fold}" / "best.pt"
+        ckpt_dir_a = ckpt_dir_a.parent / (ckpt_dir_a.name + f"_{args.tag}")
+    ckpt_path_a = ckpt_dir_a / f"fold_{args.fold}" / "best.pt"
 
-    if not args.pretrained and not ckpt_path.exists():
-        log.error(f"No checkpoint at {ckpt_path}. Run 05_train_binary.py first "
+    ckpt_dir_c = resolve_path(cfg, "checkpoints_multiclass_dir")
+    ckpt_path_c = ckpt_dir_c / f"fold_{args.fold}" / "best.pt"
+
+    if not args.pretrained and not ckpt_path_a.exists():
+        log.error(f"No Model A checkpoint at {ckpt_path_a}. Run 05_train_binary.py first "
                   f"or use --pretrained.")
         sys.exit(1)
 
@@ -316,56 +344,82 @@ def main() -> None:
     # Single model plots (pretrained OR fine-tuned)
     # -------------------------------------------------------------------------
     if not args.compare:
-        model = (load_pretrained_model(cfg, device) if args.pretrained
-                 else load_finetuned_model(cfg, device, ckpt_path))
-        embedding, stone_ids = get_embedding(model)
+        model_a = (load_pretrained_model(cfg, device) if args.pretrained
+                   else load_finetuned_model(cfg, device, ckpt_path_a))
+        embedding_a, stone_ids_a = get_embedding(model_a)
+        del model_a
         model_label = "pretrained" if args.pretrained else f"fine-tuned fold {args.fold}"
 
-        # Binary plot
-        valid, lbl = get_labels(stone_ids, binary_stone_label)
+        # Binary plot — Model A features
+        valid, lbl = get_labels(stone_ids_a, binary_stone_label)
         save_single(
-            embedding[valid], lbl, BINARY_COLORS, ["Pure", "Mixed"],
+            embedding_a[valid], lbl, BINARY_COLORS, ["Pure", "Mixed"],
             title=f"{method.upper()} — pure/mixed — {model_label}{' — ' + args.tag if args.tag else ''}",
             output_path=output_dir / f"{method}_binary{'_pretrained' if args.pretrained else ''}{suffix}.png",
             method=method,
         )
 
-        # Multiclass plot
-        valid_mc, lbl_mc = get_labels(stone_ids, multiclass_stone_label)
+        # Mineral class plot — Model C features (trained to separate mineral types)
+        if not args.pretrained and ckpt_path_c.exists():
+            model_c = load_finetuned_multiclass_model(cfg, device, ckpt_path_c)
+            embedding_c, stone_ids_c = get_embedding(model_c)
+            del model_c
+            valid_mc, lbl_mc = get_labels(stone_ids_c, multiclass_stone_label)
+            mc_model_label = f"Model C fine-tuned fold {args.fold}"
+        else:
+            embedding_c, stone_ids_c = embedding_a, stone_ids_a
+            valid_mc, lbl_mc = get_labels(stone_ids_a, multiclass_stone_label)
+            mc_model_label = model_label
+            if not args.pretrained:
+                log.warning(f"No Model C checkpoint at {ckpt_path_c} — using Model A features for mineral plot")
+
         save_single(
-            embedding[valid_mc], lbl_mc, CLASS_COLORS[:len(class_names)], class_names,
-            title=f"{method.upper()} — mineral class — {model_label}{' — ' + args.tag if args.tag else ''}",
+            embedding_c[valid_mc], lbl_mc, CLASS_COLORS[:len(class_names)], class_names,
+            title=f"{method.upper()} — mineral class — {mc_model_label}{' — ' + args.tag if args.tag else ''}",
             output_path=output_dir / f"{method}_multiclass{'_pretrained' if args.pretrained else ''}{suffix}.png",
             method=method,
         )
 
     # -------------------------------------------------------------------------
     # Comparison plots (pretrained vs fine-tuned side by side)
+    # Model A features for binary; Model C features for mineral class
     # -------------------------------------------------------------------------
     else:
-        log.info("=== Extracting pretrained features ===")
+        log.info("=== Extracting pretrained features (Model A backbone) ===")
         model_pre = load_pretrained_model(cfg, device)
         emb_pre, stone_ids = get_embedding(model_pre)
         del model_pre
 
-        log.info("=== Extracting fine-tuned features ===")
-        model_ft = load_finetuned_model(cfg, device, ckpt_path)
-        emb_ft, _ = get_embedding(model_ft)
-        del model_ft
+        log.info("=== Extracting fine-tuned Model A features ===")
+        model_ft_a = load_finetuned_model(cfg, device, ckpt_path_a)
+        emb_ft_a, _ = get_embedding(model_ft_a)
+        del model_ft_a
 
-        # Binary comparison
+        # Binary comparison — pretrained vs Model A
         valid, lbl = get_labels(stone_ids, binary_stone_label)
         save_comparison(
-            emb_pre[valid], emb_ft[valid], lbl,
+            emb_pre[valid], emb_ft_a[valid], lbl,
             BINARY_COLORS, ["Pure", "Mixed"],
             output_path=output_dir / f"{method}_comparison_binary{suffix}.png",
             method=method, label_type="pure/mixed",
         )
 
-        # Multiclass comparison
-        valid_mc, lbl_mc = get_labels(stone_ids, multiclass_stone_label)
+        # Mineral class comparison — pretrained vs Model C (if available)
+        if ckpt_path_c.exists():
+            log.info("=== Extracting fine-tuned Model C features ===")
+            model_ft_c = load_finetuned_multiclass_model(cfg, device, ckpt_path_c)
+            emb_ft_c, stone_ids_c = get_embedding(model_ft_c)
+            del model_ft_c
+            valid_mc, lbl_mc = get_labels(stone_ids_c, multiclass_stone_label)
+            emb_pre_mc = emb_pre  # pretrained baseline is the same backbone
+        else:
+            log.warning(f"No Model C checkpoint at {ckpt_path_c} — using Model A features for mineral comparison")
+            emb_ft_c = emb_ft_a
+            valid_mc, lbl_mc = get_labels(stone_ids, multiclass_stone_label)
+            emb_pre_mc = emb_pre
+
         save_comparison(
-            emb_pre[valid_mc], emb_ft[valid_mc], lbl_mc,
+            emb_pre_mc[valid_mc], emb_ft_c[valid_mc], lbl_mc,
             CLASS_COLORS[:len(class_names)], class_names,
             output_path=output_dir / f"{method}_comparison_multiclass{suffix}.png",
             method=method, label_type="mineral class",
