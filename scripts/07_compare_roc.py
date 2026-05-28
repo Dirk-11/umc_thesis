@@ -112,11 +112,12 @@ def plot_comparison(
     for (label, mean_fpr, mean_tpr, std_tpr, mean_auc, std_auc), color in zip(
         runs, RUN_COLORS
     ):
-        ax.plot(
-            mean_fpr, mean_tpr,
-            color=color, lw=2,
-            label=f"{label}  (AUC = {mean_auc:.3f} ± {std_auc:.3f})",
+        auc_label = (
+            f"{label}  (AUC = {mean_auc:.3f} ± {std_auc:.3f})"
+            if std_auc > 0
+            else f"{label}  (AUC = {mean_auc:.3f})"
         )
+        ax.plot(mean_fpr, mean_tpr, color=color, lw=2, label=auc_label)
         ax.fill_between(
             mean_fpr,
             np.maximum(mean_tpr - std_tpr, 0),

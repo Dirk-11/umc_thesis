@@ -51,7 +51,7 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score
 
 sys.path.insert(0, str(Path(__file__).parent))
-from utils import ensure_dir, load_config, resolve_path, setup_logging
+from utils import PALETTE, ensure_dir, load_config, resolve_path, setup_logging
 
 log = setup_logging("evaluate_composition")
 
@@ -254,7 +254,7 @@ def evaluate_fold_moe(
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
 
     model_module = import_module("04_model_composition")
-    if model_type == "simple":
+    if model_type.split("_")[0] == "simple":
         model = model_module.build_simple_composition_model(cfg).to(device)
     else:
         model = model_module.build_composition_model(cfg).to(device)
@@ -359,8 +359,8 @@ def plot_training_curves(
 
     # --- Top: loss ---
     for col, label, color in [
-        ("train_total_loss", "Train loss (total)", "steelblue"),
-        ("val_loss",         "Val loss (KL)",       "firebrick"),
+        ("train_total_loss", "Train loss (total)", PALETTE["train"]),
+        ("val_loss",         "Val loss (KL)",       PALETTE["val"]),
     ]:
         epochs, mean, std = _agg(col)
         ax_loss.plot(epochs, mean, color=color, lw=2, label=label)
@@ -457,10 +457,9 @@ def plot_composition_scatter(
         mae = float(np.abs(pred_vals - true_vals).mean())
 
         ax.scatter(true_vals, pred_vals, alpha=0.5, s=20, color="steelblue")
-        lim = max(true_vals.max(), pred_vals.max()) * 1.05
-        ax.plot([0, lim], [0, lim], "k--", lw=1)
-        ax.set_xlim(0, lim)
-        ax.set_ylim(0, lim)
+        ax.plot([0, 1], [0, 1], "k--", lw=1)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
         ax.set_xlabel("True", fontsize=10)
         ax.set_ylabel("Predicted", fontsize=10)
         ax.set_title(f"{cls}  (MAE={mae:.3f})", fontsize=11)

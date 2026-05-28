@@ -75,3 +75,14 @@ def ensure_dir(path: Path) -> Path:
     """Create directory if it doesn't exist and return it."""
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+# Shared color palette — import this in all visualization scripts
+PALETTE = {
+    "pure":    "#2166AC",  # dark blue
+    "mixed":   "#D6604D",  # muted red
+    "train":   "#4393C3",  # medium blue
+    "val":     "#D6604D",  # muted red
+    "accent":  "#F4A582",  # light orange
+    "neutral": "#92C5DE",  # light blue
+}

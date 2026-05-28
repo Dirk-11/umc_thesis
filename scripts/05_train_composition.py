@@ -315,7 +315,7 @@ def train_one_fold(
     train_loader = ds_module.make_compositional_dataloader(samples, train_idx, cfg, train=True)
     val_loader   = ds_module.make_compositional_dataloader(samples, val_idx,   cfg, train=False)
 
-    if model_type == "simple":
+    if model_type.split("_")[0] == "simple":
         model = model_module.build_simple_composition_model(cfg).to(device)
     else:
         model = model_module.build_composition_model(cfg).to(device)

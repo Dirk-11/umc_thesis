@@ -51,7 +51,7 @@ from sklearn.metrics import (
 )
 
 sys.path.insert(0, str(Path(__file__).parent))
-from utils import ensure_dir, load_config, resolve_path, setup_logging
+from utils import PALETTE, ensure_dir, load_config, resolve_path, setup_logging
 
 log = setup_logging("evaluate")
 
@@ -168,13 +168,13 @@ def plot_training_curves(
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    ax.plot(epochs, train_mean, color="steelblue", lw=2, label="Train loss")
+    ax.plot(epochs, train_mean, color=PALETTE["train"], lw=2, label="Train loss")
     ax.fill_between(epochs, train_mean - train_std, train_mean + train_std,
-                    alpha=0.2, color="steelblue")
+                    alpha=0.2, color=PALETTE["train"])
 
-    ax.plot(epochs, val_mean, color="firebrick", lw=2, label="Val loss")
+    ax.plot(epochs, val_mean, color=PALETTE["val"], lw=2, label="Val loss")
     ax.fill_between(epochs, val_mean - val_std, val_mean + val_std,
-                    alpha=0.2, color="firebrick")
+                    alpha=0.2, color=PALETTE["val"])
 
     if phase_boundary is not None:
         ax.axvline(phase_boundary - 0.5, color="gray", linestyle="--", lw=1.5,
@@ -209,15 +209,16 @@ def plot_confusion_matrix(
     ax.set_ylabel("True label", fontsize=12)
     ax.set_title(title, fontsize=12)
 
-    # Write counts inside cells
     thresh = cm.max() / 2.0
     for i in range(cm.shape[0]):
+        row_total = cm[i].sum()
         for j in range(cm.shape[1]):
+            pct = 100 * cm[i, j] / row_total if row_total > 0 else 0
             ax.text(
-                j, i, str(cm[i, j]),
+                j, i, f"{cm[i, j]}\n({pct:.0f}%)",
                 ha="center", va="center",
                 color="white" if cm[i, j] > thresh else "black",
-                fontsize=13,
+                fontsize=11,
             )
 
     fig.tight_layout()
@@ -499,7 +500,7 @@ def main() -> None:
         cm,
         class_names=["pure", "mixed"],
         output_path=figures_dir / f"confusion_matrix{suffix}.png",
-        title=f"Confusion matrix (aggregated across folds){title_tag}",
+        title=f"Confusion matrix — Model A, binary (cross-validation){title_tag}",
     )
 
     # -------------------------------------------------------------------------

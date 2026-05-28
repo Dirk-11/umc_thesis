@@ -15,10 +15,10 @@ paths:
   images_dir: "data/images"
   outputs_dir: "outputs"
   figures_dir: "outputs/figures"
-  checkpoints_dir: "outputs/checkpoints"
-  checkpoints_frozen_dir: "outputs/checkpoints_frozen"
-  checkpoints_composition_dir: "outputs/checkpoints_composition"
-  checkpoints_multiclass_dir: "outputs/checkpoints_multiclass"
+  checkpoints_dir: "outputs/checkpoints/binary"
+  checkpoints_frozen_dir: "outputs/checkpoints/frozen"
+  checkpoints_composition_dir: "outputs/checkpoints/composition"
+  checkpoints_multiclass_dir: "outputs/checkpoints/multiclass"
   logs_dir: "outputs/logs"
   processed_csv: "data/processed/stones_labeled.csv"
   processed_images_csv: "data/processed/images_labeled.csv"
@@ -233,7 +233,7 @@ model_composition:
   aux_head_hidden_dim: 128
   head_dropout: 0.5
   # Optional: path to a Model A fold checkpoint to warm-start the backbone.
-  # e.g. "outputs/checkpoints/fold_0/best.pt". null = use ImageNet weights only.
+  # e.g. "outputs/checkpoints/binary/fold_0/best.pt". null = use ImageNet weights only.
   warm_start_from: null
   purity_model_checkpoint: null
 

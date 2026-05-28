@@ -254,7 +254,7 @@ def save_category_figure(
 
     fig.suptitle(title, fontsize=13, y=1.01)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=120, bbox_inches="tight")
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     log.info(f"Saved: {output_path}")
 
@@ -308,7 +308,7 @@ def save_summary_grid(
 
     fig.suptitle("Grad-CAM summary — one example per outcome", fontsize=13, y=1.01)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=120, bbox_inches="tight")
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     log.info(f"Saved: {output_path}")
 
