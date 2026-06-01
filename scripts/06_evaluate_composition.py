@@ -356,6 +356,7 @@ def plot_training_curves(
         return epochs, mean, std
 
     fig, (ax_loss, ax_perf) = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
+    ax_loss.tick_params(labelbottom=True)
 
     # --- Top: loss ---
     for col, label, color in [
@@ -369,6 +370,7 @@ def plot_training_curves(
         ax_loss.axvline(phase_boundary - 0.5, color="gray", linestyle="--",
                         lw=1.5, label="Backbone unfrozen")
     ax_loss.set_ylabel("Loss", fontsize=12)
+    ax_loss.set_xlabel("Epoch", fontsize=12)
     ax_loss.legend(fontsize=10)
     ax_loss.set_title(title, fontsize=13)
 

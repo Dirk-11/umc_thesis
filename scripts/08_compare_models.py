@@ -107,16 +107,16 @@ def plot_comparison(
     fig, ax = plt.subplots(figsize=(max(8, len(labels) * 1.4), 5))
 
     ax.bar(x - width / 2, b_vals, width, yerr=b_errs, capsize=4,
-           color=PALETTE.get("val", "#377eb8"), alpha=0.85, label="Model B (composition)")
+           color=PALETTE.get("val", "#377eb8"), alpha=0.85, label="Compositional regression")
     ax.bar(x + width / 2, c_vals, width, yerr=c_errs, capsize=4,
-           color=PALETTE.get("train", "#e41a1c"), alpha=0.85, label="Model C (6-class)")
+           color=PALETTE.get("train", "#e41a1c"), alpha=0.85, label="Multi-class classification")
 
     if len(b_mac) > 0 and not np.isnan(b_mac[0]):
         ax.axhline(b_mac[0], color=PALETTE.get("val", "#377eb8"),
-                   linestyle="--", lw=1.5, alpha=0.7, label=f"Model B macro = {b_mac[0]:.3f}")
+                   linestyle="--", lw=1.5, alpha=0.7, label=f"Compositional regression macro = {b_mac[0]:.3f}")
     if len(c_mac) > 0 and not np.isnan(c_mac[0]):
         ax.axhline(c_mac[0], color=PALETTE.get("train", "#e41a1c"),
-                   linestyle="--", lw=1.5, alpha=0.7, label=f"Model C macro = {c_mac[0]:.3f}")
+                   linestyle="--", lw=1.5, alpha=0.7, label=f"Multi-class classification macro = {c_mac[0]:.3f}")
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11)
@@ -172,8 +172,8 @@ def run(split: str, logs_dir: Path, figures_dir: Path, class_names: list[str]) -
         table,
         output_path=figures_dir / f"model_bc_f1_comparison_{tag}.png",
         title=(
-            f"Dominant-component F1 — Model B (compositional regression) vs "
-            f"Model C (6-class classifier)\n({title_suffix})"
+            f"Dominant-component F1 — Compositional regression vs "
+            f"Multi-class classification\n({title_suffix})"
         ),
     )
 
