@@ -66,6 +66,29 @@ def load_raw_excel(excel_path: Path) -> pd.DataFrame:
     # Forward-fill fragment IDs (set only on first photo of each stone)
     df["fragment"] = df["fragment"].ffill()
 
+    # Fix three classes of photo ID data-entry errors:
+    #
+    # 1. Single letter only (S341+ shorthand): 'A' → 'S341A'
+    short_mask = df["photo"].astype(str).str.match(r"^[A-Ca-c]$", na=False)
+    if short_mask.any():
+        df.loc[short_mask, "photo"] = (
+            df.loc[short_mask, "fragment"].astype(str)
+            + df.loc[short_mask, "photo"].astype(str).str.upper()
+        )
+        log.info(f"  Reconstructed {short_mask.sum()} single-letter photo IDs (e.g. 'A' → 'S341A')")
+
+    # 2. Missing 'S' prefix (S336–S340): '336A' → 'S336A'
+    no_s_mask = df["photo"].astype(str).str.match(r"^\d+[A-C]$", na=False)
+    if no_s_mask.any():
+        df.loc[no_s_mask, "photo"] = "S" + df.loc[no_s_mask, "photo"].astype(str)
+        log.info(f"  Added missing 'S' prefix to {no_s_mask.sum()} photo IDs (e.g. '336A' → 'S336A')")
+
+    # 3. Wrong leading letter typos: 'A34B', 'Z303B' → 'S34B', 'S303B'
+    wrong_lead = df["photo"].astype(str).str.match(r"^[A-RT-Za-rt-z]\d+[A-C]$", na=False)
+    if wrong_lead.any():
+        df.loc[wrong_lead, "photo"] = "S" + df.loc[wrong_lead, "photo"].astype(str).str[1:]
+        log.info(f"  Fixed {wrong_lead.sum()} wrong-leading-letter photo IDs (e.g. 'A34B' → 'S34B')")
+
     # Strip whitespace from component columns (handles 'CHP ' with trailing space)
     for col in ["primary", "secondary", "tertiary"]:
         df[col] = (
