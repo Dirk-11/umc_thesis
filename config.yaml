@@ -11,7 +11,7 @@ project:
   seed: 42
 
 paths:
-  excel_file: "data/Data_MOCKI_analyse_per_foto.xlsx"
+  excel_file: "data/data/Data_MOCKI_analyse_per_foto.xlsx"
   images_dir: "data/images"
   outputs_dir: "outputs"
   figures_dir: "outputs/figures"
