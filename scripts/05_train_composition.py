@@ -92,17 +92,45 @@ def resolve_device(requested: str) -> torch.device:
 # -----------------------------------------------------------------------------
 # Loss function
 # -----------------------------------------------------------------------------
-def make_criterion(loss_type: str):
+def compute_kl_weights(
+    samples: list, class_names: list[str], device: torch.device, eps: float = 1e-6
+) -> torch.Tensor:
+    """Compute inverse-frequency class weights from training compositions.
+
+    w_c = 1 / (mean true fraction of class c + eps), normalised so weights
+    sum to n_classes.  Rare classes (small mean fraction) get higher weight.
+    """
+    comps = np.array([s.composition for s in samples])   # (N, n_classes)
+    mean_fracs = comps.mean(axis=0)                       # (n_classes,)
+    weights = 1.0 / (mean_fracs + eps)
+    weights = weights / weights.sum() * len(class_names)  # normalise
+    log.info("Weighted KL class weights (inv-freq, normalised):")
+    for cls, w, mf in zip(class_names, weights, mean_fracs):
+        log.info(f"  {cls}: mean_frac={mf:.4f}  weight={w:.3f}")
+    return torch.tensor(weights, dtype=torch.float32, device=device)
+
+
+def make_criterion(loss_type: str, kl_weights: torch.Tensor | None = None):
     """Return a loss function (logits, targets) → scalar.
 
     logits:  (batch, n_classes) raw model output
     targets: (batch, n_classes) ground-truth composition, sums to 1.0
+
+    When kl_weights is provided (and loss_type == "kl"), applies per-class
+    inverse-frequency weighting before summing the KL terms.
     """
     if loss_type == "kl":
-        def fn(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-            return F.kl_div(
-                F.log_softmax(logits, dim=1), targets, reduction="batchmean"
-            )
+        if kl_weights is not None:
+            def fn(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+                log_pred = F.log_softmax(logits, dim=1)         # (B, C)
+                kl_per_class = targets * (targets.clamp(min=1e-8).log() - log_pred)
+                w = kl_weights.to(logits.device)
+                return (kl_per_class * w).sum(dim=1).mean()
+        else:
+            def fn(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+                return F.kl_div(
+                    F.log_softmax(logits, dim=1), targets, reduction="batchmean"
+                )
     elif loss_type == "l1":
         def fn(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
             return F.l1_loss(F.softmax(logits, dim=1), targets)
@@ -306,6 +334,7 @@ def train_one_fold(
     fold_dir: Path,
     quick: bool = False,
     model_type: str = "parallel",
+    kl_weights: torch.Tensor | None = None,
 ) -> dict:
     ensure_dir(fold_dir)
 
@@ -319,7 +348,7 @@ def train_one_fold(
         model = model_module.build_simple_composition_model(cfg).to(device)
     else:
         model = model_module.build_composition_model(cfg).to(device)
-    criterion = make_criterion(cfg["training_composition"]["loss"])
+    criterion = make_criterion(cfg["training_composition"]["loss"], kl_weights=kl_weights)
     class_names = cfg["class_remapping"]["final_classes"]
     aggregation = cfg["evaluation_composition"]["stone_level_aggregation"]
 
@@ -543,6 +572,17 @@ def main() -> None:
     logs_dir  = ensure_dir(resolve_path(cfg, "logs_dir"))
     log.info(f"Model type: {model_type_tag}  |  checkpoints → {ckpt_dir}")
 
+    # Weighted KL: compute inverse-frequency weights from the full train+val pool.
+    # Per-fold train split weights would be slightly more correct, but the overall
+    # pool is stable across folds and avoids recomputing weights each fold.
+    tcfg = cfg["training_composition"]
+    kl_weights: torch.Tensor | None = None
+    if tcfg.get("use_weighted_kl", False) and tcfg["loss"] == "kl":
+        log.info("use_weighted_kl=true — computing inverse-frequency weights from train+val pool")
+        kl_weights = compute_kl_weights(train_val_samples, final_classes, device)
+    else:
+        log.info("use_weighted_kl=false — using standard (unweighted) KL divergence")
+
     fold_range = [args.fold] if args.fold is not None else range(len(folds))
     all_summaries: list[dict] = []
 
@@ -553,6 +593,7 @@ def main() -> None:
         summary = train_one_fold(
             fold_i, train_val_samples, train_idx, val_idx,
             cfg, device, fold_dir, quick=args.quick, model_type=model_type_tag,
+            kl_weights=kl_weights,
         )
         all_summaries.append(summary)
 

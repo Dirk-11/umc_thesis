@@ -149,7 +149,7 @@ def draw_model_a(save_path: Path):
 # Model B — CompositionModel (parallel) vs SimpleCompositionModel
 # ══════════════════════════════════════════════════════════════════════════════
 def draw_model_b(save_path: Path):
-    CLASSES = ["CaOx", "CHP", "UA", "MAP", "CYS", "OTH"]
+    CLASSES = ["CaOx", "CaP", "UA", "MAP", "CYS", "OTH"]
     N = len(CLASSES)
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 11))

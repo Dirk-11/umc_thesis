@@ -107,7 +107,7 @@ class_remapping:
     "Na-H-urate hydrate": "UA"      # 16 stones, urate salt
     "Monoammonium urate": "UA"      #  7 stones, urate salt
     "Uric acid dihydrate": "UA"     #  2 stones, UA variant
-    "Ca-Mg phosphate": "CHP"        #  3 stones, phosphate variant
+    "Ca-Mg phosphate": "CaP"        #  3 stones, phosphate variant
     "Newberyite": "MAP"             #  1 stone,  Mg phosphate
     # Calcite (9), Protein (10), Xanthine (5) stay as "OTH" by default
 
@@ -117,9 +117,9 @@ class_remapping:
   component_to_final_class:
     "COM": "CaOx"
     "COD": "CaOx"
-    "CHP": "CHP"
-    "CHPD": "CHP"
-    "CMP": "CHP"
+    "CHP": "CaP"
+    "CHPD": "CaP"
+    "CMP": "CaP"
     "UA": "UA"
     "MAP": "MAP"
     "CYS": "CYS"
@@ -128,7 +128,7 @@ class_remapping:
   # The full list of final classes produced by the remapping pipeline
   final_classes:
     - "CaOx"
-    - "CHP"
+    - "CaP"
     - "UA"
     - "MAP"
     - "CYS"
@@ -249,6 +249,7 @@ training_composition:
   weight_decay: 0.001
   early_stopping_patience: 7
   loss: "kl"              # "kl" (KL divergence), "l1", or "mse"
+  use_weighted_kl: false  # weight KL terms by inverse class frequency (set true to enable)
   aux_loss_weight: 0.3    # weight for presence/absence detection BCE loss
   presence_threshold: 0.05  # fraction threshold to define class as "present"
 

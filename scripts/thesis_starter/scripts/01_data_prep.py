@@ -10,7 +10,7 @@ Pipeline:
   6. Apply known percentage corrections (Excel data-entry errors)
   7. Apply OTH remapping based on FTIR sub-identification
   8. Apply purity threshold → binary pure/mixed label
-  9. Build composition vectors (comp_CaOx, comp_CHP, …) for Model B
+  9. Build composition vectors (comp_CaOx, comp_CaP, …) for Model B
  10. Verify images exist on disk for each stone
  11. Export stone-level and image-level CSVs
 
@@ -117,7 +117,7 @@ def apply_class_remapping(df: pd.DataFrame, remap_cfg: dict) -> pd.DataFrame:
 
     Stage 2 — Standard component merging:
       Collapse the 9 original Excel component codes into the 6 final
-      classes (e.g. COM + COD → CaOx, CHP + CHPD + CMP → CHP).
+      classes (e.g. COM + COD → CaOx, CHP + CHPD + CMP → CaP).
 
     Both stages operate on primary, secondary, AND tertiary columns so
     downstream regression/composition models get consistent labels.
