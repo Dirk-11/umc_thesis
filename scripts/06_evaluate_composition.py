@@ -444,7 +444,7 @@ def plot_composition_scatter(
     title: str = "Predicted vs true composition — stone level",
 ) -> None:
     """One scatter subplot per class: true (x) vs predicted (y) composition fraction."""
-    from scipy.stats import pearsonr, spearmanr
+    from scipy.stats import spearmanr
 
     n = len(class_names)
     ncols = 3
@@ -457,7 +457,6 @@ def plot_composition_scatter(
         true_vals = stone_df[f"true_{cls}"].values
         pred_vals = stone_df[f"pred_{cls}"].values
         mae = float(np.abs(pred_vals - true_vals).mean())
-        r   = pearsonr(true_vals, pred_vals).statistic if len(true_vals) > 2 else float("nan")
         rho = spearmanr(true_vals, pred_vals).statistic if len(true_vals) > 2 else float("nan")
 
         ax.scatter(true_vals, pred_vals, alpha=0.5, s=20, color="steelblue")
@@ -466,7 +465,7 @@ def plot_composition_scatter(
         ax.set_ylim(0, 1)
         ax.set_xlabel("True", fontsize=10)
         ax.set_ylabel("Predicted", fontsize=10)
-        ax.set_title(f"{cls}  (MAE={mae:.3f}  r={r:.2f}  ρ={rho:.2f})", fontsize=11)
+        ax.set_title(f"{cls}  (MAE={mae:.3f}  ρ={rho:.2f})", fontsize=11)
 
     for j in range(i + 1, len(axes)):
         axes[j].set_visible(False)
