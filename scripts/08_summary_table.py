@@ -103,11 +103,11 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=(10, 5))
 
     bars_mc = ax.bar(x - width, mc_m,   width, yerr=mc_s,   capsize=4,
-                     color=PALETTE["pure"],    alpha=0.85, label="Model C (6-class)")
+                     color=PALETTE["pure"],    alpha=0.85, label="Multiclass model")
     bars_rand = ax.bar(x,       rand_m, width, yerr=rand_s, capsize=4,
-                     color=PALETTE["neutral"], alpha=0.85, label="Model C — random baseline")
+                     color=PALETTE["neutral"], alpha=0.85, label="Multiclass model — random baseline")
     bars_b  = ax.bar(x + width, b_m,    width, yerr=b_s,    capsize=4,
-                     color=PALETTE["mixed"],   alpha=0.85, label="Model B (dominant component)")
+                     color=PALETTE["mixed"],   alpha=0.85, label="Composition model (dominant component)")
 
     # Separator between per-class and macro
     ax.axvline(n_cls - 0.5, color="gray", linestyle="--", lw=1)
