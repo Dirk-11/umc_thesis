@@ -80,5 +80,10 @@ sbatch \
     --wrap="$SETUP && python scripts/07_compare_roc.py \
         --runs '100% purity:' '90% purity:_t90' 'Random:_random'"
 
+# ── Model B vs C comparison (after both main evals complete) ─────────────────
+ALL_BC="${JID_B_EVAL_MAIN}:${JID_C_EVAL_MAIN}"
+submit_eval "bc_compare" "$ALL_BC" \
+    "python scripts/08_compare_models.py && python scripts/08_compare_models.py --test"
+
 echo ""
 echo "All jobs submitted. Monitor with: squeue -u \$USER"
