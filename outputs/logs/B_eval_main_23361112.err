@@ -1,0 +1,148 @@
+01:49:57 | INFO | Device: cuda  |  model: simple
+01:50:00 | INFO | Skipped 21 rows with no composition data
+01:50:00 | WARNING | Skipped 2 rows whose image files are missing
+01:50:00 | INFO | Built 1240 compositional samples from 414 stones
+01:50:00 | INFO | Excluded classes ['OTH'] → 5 classes remaining, 410 stones
+01:50:00 | INFO | Test holdout: 82 stones (40 pure / 42 mixed, 246 images). Train+val pool: 328 stones (982 images).
+01:50:00 | INFO |   Fold 0: train=262 stones (128 pure / 134 mixed, 784 images), val=66 stones (33 pure / 33 mixed, 198 images)
+01:50:00 | INFO |   Fold 1: train=262 stones (129 pure / 133 mixed, 785 images), val=66 stones (32 pure / 34 mixed, 197 images)
+01:50:00 | INFO |   Fold 2: train=262 stones (129 pure / 133 mixed, 784 images), val=66 stones (32 pure / 34 mixed, 198 images)
+01:50:00 | INFO |   Fold 3: train=263 stones (129 pure / 134 mixed, 787 images), val=65 stones (32 pure / 33 mixed, 195 images)
+01:50:00 | INFO |   Fold 4: train=263 stones (129 pure / 134 mixed, 788 images), val=65 stones (32 pure / 33 mixed, 194 images)
+01:50:01 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_training_curves.png
+01:50:01 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:50:01 | INFO | Fold 0: loaded checkpoint from epoch 13 (val_loss=0.8588)
+01:50:19 | INFO |   Stone-level — mae=0.1871  dom_acc=0.561  aitchison=11.3271
+01:50:19 | INFO |   Detection (macro) — precision=0.310  recall=0.314  f1=0.311
+01:50:19 | INFO |   Quantification MAE (present only) — overall=0.3893  CaOx=0.3174(n=40)  CaP=0.3911(n=34)  UA=0.4084(n=11)  MAP=0.4637(n=4)  CYS=0.7746(n=6)
+01:50:20 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:50:20 | INFO | Fold 1: loaded checkpoint from epoch 29 (val_loss=0.6492)
+01:50:36 | INFO |   Stone-level — mae=0.1400  dom_acc=0.742  aitchison=10.6521
+01:50:36 | INFO |   Detection (macro) — precision=0.922  recall=0.493  f1=0.580
+01:50:36 | INFO |   Quantification MAE (present only) — overall=0.2935  CaOx=0.2140(n=37)  CaP=0.2957(n=35)  UA=0.3699(n=7)  MAP=0.3286(n=7)  CYS=0.5916(n=7)
+01:50:37 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:50:37 | INFO | Fold 2: loaded checkpoint from epoch 24 (val_loss=0.8244)
+01:50:54 | INFO |   Stone-level — mae=0.1639  dom_acc=0.636  aitchison=10.9766
+01:50:54 | INFO |   Detection (macro) — precision=0.467  recall=0.391  f1=0.416
+01:50:54 | INFO |   Quantification MAE (present only) — overall=0.3239  CaOx=0.2705(n=39)  CaP=0.3018(n=38)  UA=0.3628(n=11)  MAP=0.3112(n=8)  CYS=0.7559(n=6)
+01:50:54 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:50:54 | INFO | Fold 3: loaded checkpoint from epoch 22 (val_loss=0.6148)
+01:51:11 | INFO |   Stone-level — mae=0.1371  dom_acc=0.723  aitchison=10.8899
+01:51:11 | INFO |   Detection (macro) — precision=0.545  recall=0.344  f1=0.379
+01:51:11 | INFO |   Quantification MAE (present only) — overall=0.2646  CaOx=0.1993(n=42)  CaP=0.2839(n=35)  UA=0.2927(n=12)  MAP=0.1889(n=6)  CYS=0.6282(n=6)
+01:51:11 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:51:11 | INFO | Fold 4: loaded checkpoint from epoch 27 (val_loss=0.6667)
+01:51:29 | INFO |   Stone-level — mae=0.1558  dom_acc=0.600  aitchison=11.1643
+01:51:29 | INFO |   Detection (macro) — precision=0.470  recall=0.354  f1=0.397
+01:51:29 | INFO |   Quantification MAE (present only) — overall=0.2960  CaOx=0.2647(n=36)  CaP=0.2799(n=42)  UA=0.3005(n=11)  MAP=0.2829(n=8)  CYS=0.6060(n=6)
+01:51:29 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_simple_stone_predictions.csv
+01:51:29 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_simple_fold_summaries.csv
+01:51:29 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_simple_cv_summary.csv
+01:51:29 | INFO | Cross-fold validation results:
+01:51:29 | INFO |   stone_mae_overall: 0.1568 ± 0.0202
+01:51:29 | INFO |   stone_dominant_acc: 0.6525 ± 0.0783
+01:51:29 | INFO |   stone_dominant_macro_f1: 0.4751 ± 0.0818
+01:51:29 | INFO |   stone_aitchison: 11.0020 ± 0.2587
+01:51:29 | INFO |   det_f1_macro: 0.4164 ± 0.0994
+01:51:29 | INFO |   det_precision_macro: 0.5429 ± 0.2288
+01:51:29 | INFO |   det_recall_macro: 0.3791 ± 0.0693
+01:51:29 | INFO |   quant_mae_overall: 0.3135 ± 0.0473
+01:51:29 | INFO |   Per-class F1 — dominant component (stone-level, mean ± std):
+01:51:29 | INFO |   Class          F1     Std
+01:51:29 | INFO |   --------------------------
+01:51:29 | INFO |   CaOx        0.772   0.045
+01:51:29 | INFO |   CaP         0.541   0.120
+01:51:29 | INFO |   UA          0.593   0.215
+01:51:29 | INFO |   MAP         0.000   0.000
+01:51:29 | INFO |   CYS         0.470   0.141
+01:51:29 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_mae_bars.png
+01:51:29 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_composition_scatter.png
+01:51:30 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_primary_confusion.png
+01:51:30 | INFO |   Primary-component accuracy: 0.652
+01:51:30 | INFO | === Held-out test set evaluation ===
+01:51:30 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:51:30 | INFO | Fold 0: loaded checkpoint from epoch 13 (val_loss=0.8588)
+01:51:47 | INFO |   Stone-level — mae=0.1716  dom_acc=0.659  aitchison=11.3915
+01:51:47 | INFO |   Detection (macro) — precision=0.624  recall=0.383  f1=0.413
+01:51:47 | INFO |   Quantification MAE (present only) — overall=0.3299  CaOx=0.2878(n=43)  CaP=0.3330(n=45)  UA=0.3026(n=18)  MAP=0.2934(n=8)  CYS=0.6369(n=8)
+01:51:47 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:51:47 | INFO | Fold 1: loaded checkpoint from epoch 29 (val_loss=0.6492)
+01:52:04 | INFO |   Stone-level — mae=0.1572  dom_acc=0.646  aitchison=11.0230
+01:52:04 | INFO |   Detection (macro) — precision=0.630  recall=0.436  f1=0.490
+01:52:04 | INFO |   Quantification MAE (present only) — overall=0.3119  CaOx=0.2924(n=43)  CaP=0.3098(n=45)  UA=0.2664(n=18)  MAP=0.2638(n=8)  CYS=0.5798(n=8)
+01:52:04 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:52:04 | INFO | Fold 2: loaded checkpoint from epoch 24 (val_loss=0.8244)
+01:52:21 | INFO |   Stone-level — mae=0.1593  dom_acc=0.646  aitchison=11.0058
+01:52:21 | INFO |   Detection (macro) — precision=0.650  recall=0.409  f1=0.446
+01:52:21 | INFO |   Quantification MAE (present only) — overall=0.3109  CaOx=0.2425(n=43)  CaP=0.3385(n=45)  UA=0.3145(n=18)  MAP=0.2875(n=8)  CYS=0.5384(n=8)
+01:52:21 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:52:21 | INFO | Fold 3: loaded checkpoint from epoch 22 (val_loss=0.6148)
+01:52:37 | INFO |   Stone-level — mae=0.1601  dom_acc=0.707  aitchison=11.1572
+01:52:37 | INFO |   Detection (macro) — precision=0.688  recall=0.418  f1=0.471
+01:52:37 | INFO |   Quantification MAE (present only) — overall=0.3147  CaOx=0.2867(n=43)  CaP=0.3147(n=45)  UA=0.2965(n=18)  MAP=0.2578(n=8)  CYS=0.5625(n=8)
+01:52:37 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+01:52:37 | INFO | Fold 4: loaded checkpoint from epoch 27 (val_loss=0.6667)
+01:52:54 | INFO |   Stone-level — mae=0.1625  dom_acc=0.683  aitchison=11.2777
+01:52:54 | INFO |   Detection (macro) — precision=0.450  recall=0.408  f1=0.421
+01:52:54 | INFO |   Quantification MAE (present only) — overall=0.3140  CaOx=0.3052(n=43)  CaP=0.3069(n=45)  UA=0.2475(n=18)  MAP=0.2681(n=8)  CYS=0.5965(n=8)
+01:52:54 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_simple_test_stone_predictions.csv
+01:52:54 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_simple_test_summary.csv
+01:52:54 | INFO | Test set results (mean ± std across folds):
+01:52:54 | INFO |   stone_mae_overall: 0.1621 ± 0.0056
+01:52:54 | INFO |   stone_dominant_acc: 0.6683 ± 0.0264
+01:52:54 | INFO |   stone_dominant_macro_f1: 0.5108 ± 0.0268
+01:52:54 | INFO |   stone_aitchison: 11.1710 ± 0.1654
+01:52:54 | INFO |   det_f1_macro: 0.4483 ± 0.0327
+01:52:54 | INFO |   det_precision_macro: 0.6084 ± 0.0922
+01:52:54 | INFO |   det_recall_macro: 0.4108 ± 0.0190
+01:52:54 | INFO |   quant_mae_overall: 0.3163 ± 0.0078
+01:52:54 | INFO |   Per-class F1 — dominant component (stone-level, mean ± std):
+01:52:54 | INFO |   Class          F1     Std
+01:52:54 | INFO |   --------------------------
+01:52:54 | INFO |   CaOx        0.764   0.020
+01:52:54 | INFO |   CaP         0.567   0.060
+01:52:54 | INFO |   UA          0.553   0.087
+01:52:54 | INFO |   MAP         0.000   0.000
+01:52:54 | INFO |   CYS         0.671   0.136
+01:52:54 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_mae_bars_test.png
+01:52:55 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_composition_scatter_test.png
+01:52:55 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/simple_primary_confusion_test.png
+01:52:55 | INFO |   Primary-component accuracy: 0.720
+01:52:55 | INFO | Within-stone prediction std (mean across classes): 0.0635
+01:52:55 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/simple_within_stone_variance.csv
+01:52:55 | INFO | Baselines (test set):
+01:52:55 | INFO |   Dataset mean  — MAE=0.2382  dom_acc=0.488  aitchison=12.3862
+01:52:55 | INFO |   Primary onehot — MAE=0.0388  dom_acc=1.000  aitchison=5.0720
+01:52:55 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_baselines.csv
+Traceback (most recent call last):
+  File "/gpfs/home3/ddboer/umc_thesis/scripts/06_evaluate_composition.py", line 910, in <module>
+    main()
+  File "/gpfs/home3/ddboer/umc_thesis/scripts/06_evaluate_composition.py", line 867, in main
+    a_true  = model_a.loc[common, "label"].values
+              ~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1200, in __getitem__
+    return self._getitem_tuple(key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1386, in _getitem_tuple
+    return self._getitem_lowerdim(tup)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1117, in _getitem_lowerdim
+    return getattr(section, self.name)[new_key]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1207, in __getitem__
+    return self._getitem_axis(maybe_callable, axis=axis)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1438, in _getitem_axis
+    return self._getitem_iterable(key, axis=axis)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1378, in _getitem_iterable
+    keyarr, indexer = self._get_listlike_indexer(key, axis)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexing.py", line 1576, in _get_listlike_indexer
+    keyarr, indexer = ax._get_indexer_strict(key, axis_name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexes/base.py", line 6302, in _get_indexer_strict
+    self._raise_if_missing(keyarr, indexer, axis_name)
+  File "/home/ddboer/.conda/envs/umc_thesis/lib/python3.11/site-packages/pandas/core/indexes/base.py", line 6355, in _raise_if_missing
+    raise KeyError(f"{not_found} not in index")
+KeyError: "['S102', 'S114', 'S125', 'S126', 'S133', 'S137', 'S141', 'S143', 'S159', 'S16', 'S160', 'S17', 'S177', 'S182', 'S183', 'S184', 'S193', 'S196', 'S20', 'S206', 'S213', 'S215', 'S216', 'S229', 'S23', 'S238', 'S243', 'S247', 'S248', 'S251', 'S26', 'S261', 'S279', 'S28', 'S286', 'S293', 'S303', 'S306', 'S311', 'S314', 'S327', 'S336', 'S351', 'S359', 'S36', 'S360', 'S365', 'S368', 'S370', 'S381', 'S388', 'S391', 'S392', 'S395', 'S396', 'S40', 'S400', 'S401', 'S406', 'S411', 'S412', 'S48', 'S68', 'S69', 'S79', 'S92', 'S94'] not in index"

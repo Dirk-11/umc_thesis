@@ -1,0 +1,60 @@
+19:28:44 | INFO | Device: cuda
+19:28:47 | INFO | Recomputed labels at 100.0% threshold: 402 pure / 597 mixed (333 stones)
+19:28:47 | WARNING | Skipped 6 rows whose image files are missing
+19:28:47 | INFO | Built 993 samples from 333 stones
+19:28:47 | INFO | Test holdout: 67 stones (27 pure / 40 mixed, 201 images). Train+val pool: 266 stones (792 images).
+19:28:47 | INFO |   Fold 0: train=212 stones (85 pure / 127 mixed, 631 images), val=54 stones (22 pure / 32 mixed, 161 images)
+19:28:47 | INFO |   Fold 1: train=213 stones (85 pure / 128 mixed, 635 images), val=53 stones (22 pure / 31 mixed, 157 images)
+19:28:47 | INFO |   Fold 2: train=213 stones (86 pure / 127 mixed, 633 images), val=53 stones (21 pure / 32 mixed, 159 images)
+19:28:47 | INFO |   Fold 3: train=213 stones (86 pure / 127 mixed, 636 images), val=53 stones (21 pure / 32 mixed, 156 images)
+19:28:47 | INFO |   Fold 4: train=213 stones (86 pure / 127 mixed, 633 images), val=53 stones (21 pure / 32 mixed, 159 images)
+19:28:47 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/training_curves.png
+19:28:48 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:28:48 | INFO | Fold 0: loaded checkpoint from epoch 8 (val_loss=0.6218)
+19:29:05 | INFO |   Stone-level — acc=0.722  f1=0.805  roc_auc=0.804
+19:29:06 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:29:06 | INFO | Fold 1: loaded checkpoint from epoch 20 (val_loss=0.6180)
+19:29:22 | INFO |   Stone-level — acc=0.792  f1=0.825  roc_auc=0.880
+19:29:23 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:29:23 | INFO | Fold 2: loaded checkpoint from epoch 20 (val_loss=0.5947)
+19:29:39 | INFO |   Stone-level — acc=0.811  f1=0.861  roc_auc=0.872
+19:29:40 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:29:40 | INFO | Fold 3: loaded checkpoint from epoch 12 (val_loss=0.6350)
+19:29:57 | INFO |   Stone-level — acc=0.604  f1=0.727  roc_auc=0.682
+19:29:57 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:29:57 | INFO | Fold 4: loaded checkpoint from epoch 13 (val_loss=0.6246)
+19:30:13 | INFO |   Stone-level — acc=0.736  f1=0.811  roc_auc=0.818
+19:30:13 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_stone_predictions.csv
+19:30:13 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_fold_summaries.csv
+19:30:13 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_cv_summary.csv
+19:30:13 | INFO | Cross-fold results:
+19:30:13 | INFO |   stone_accuracy: 0.733 ± 0.081
+19:30:13 | INFO |   stone_f1: 0.806 ± 0.049
+19:30:13 | INFO |   stone_roc_auc: 0.811 ± 0.080
+19:30:14 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/confusion_matrix.png
+19:30:14 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/roc_curve.png
+19:30:14 | INFO | === Held-out test set evaluation ===
+19:30:14 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:30:14 | INFO | Fold 0: loaded checkpoint from epoch 8 (val_loss=0.6218)
+19:30:31 | INFO |   Stone-level — acc=0.716  f1=0.800  roc_auc=0.678
+19:30:31 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:30:31 | INFO | Fold 1: loaded checkpoint from epoch 20 (val_loss=0.6180)
+19:30:48 | INFO |   Stone-level — acc=0.821  f1=0.864  roc_auc=0.803
+19:30:48 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:30:48 | INFO | Fold 2: loaded checkpoint from epoch 20 (val_loss=0.5947)
+19:31:05 | INFO |   Stone-level — acc=0.746  f1=0.821  roc_auc=0.665
+19:31:05 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:31:05 | INFO | Fold 3: loaded checkpoint from epoch 12 (val_loss=0.6350)
+19:31:21 | INFO |   Stone-level — acc=0.716  f1=0.787  roc_auc=0.718
+19:31:22 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:31:22 | INFO | Fold 4: loaded checkpoint from epoch 13 (val_loss=0.6246)
+19:31:38 | INFO |   Stone-level — acc=0.761  f1=0.826  roc_auc=0.819
+19:31:38 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_test_stone_predictions.csv
+19:31:38 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/logs/eval_test_summary.csv
+19:31:38 | INFO | Test set results (mean ± std across folds):
+19:31:38 | INFO |   stone_accuracy: 0.752 ± 0.043
+19:31:38 | INFO |   stone_f1: 0.819 ± 0.029
+19:31:38 | INFO |   stone_roc_auc: 0.736 ± 0.071
+19:31:39 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/confusion_matrix_test.png
+19:31:39 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/roc_curve_test.png
+19:31:39 | INFO | Evaluation complete.
