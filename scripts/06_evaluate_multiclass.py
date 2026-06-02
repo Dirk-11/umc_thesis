@@ -359,7 +359,7 @@ def main() -> None:
         plot_training_curves(
             history_dfs,
             output_path=figures_dir / f"training_curves_multiclass{suffix}.png",
-            title=f"Training and validation loss — Model C (6-class){title_tag}",
+            title=f"Training and validation loss — Multiclass model{title_tag}",
         )
     else:
         log.warning("No history.csv files found — skipping training curves plot")

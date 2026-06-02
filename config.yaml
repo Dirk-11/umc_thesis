@@ -269,4 +269,4 @@ training_multiclass:
   learning_rate_head: 0.001
   learning_rate_backbone: 0.00001
   weight_decay: 0.001
-  early_stopping_patience: 5
+  early_stopping_patience: 7
