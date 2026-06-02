@@ -250,7 +250,7 @@ training_composition:
   early_stopping_patience: 7
   loss: "kl"              # "kl" (KL divergence), "l1", or "mse"
   use_weighted_kl: false  # weight KL terms by inverse class frequency (set true to enable)
-  aux_loss_weight: 0.3    # weight for presence/absence detection BCE loss
+  aux_loss_weight: 0.1    # weight for presence/absence detection BCE loss
   presence_threshold: 0.05  # fraction threshold to define class as "present"
 
 evaluation_composition:
