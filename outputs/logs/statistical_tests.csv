@@ -1,0 +1,3 @@
+metric,model_a,model_b,mean_a,mean_b,mean_diff,test,statistic,p_value,significant
+dominant_accuracy,Model B (composition),Model C (multiclass),0.6646153846153846,0.5701165501165502,0.09449883449883453,paired t-test,6.088871911052952,0.0036786036287211835,True
+macro_f1,Model B detection head,Model C (multiclass),0.4148317854787608,0.3948637503130704,0.019968035165690436,paired t-test,0.37593249662861916,0.7260552651852425,False
