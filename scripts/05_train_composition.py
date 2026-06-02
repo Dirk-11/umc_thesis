@@ -482,6 +482,8 @@ def main() -> None:
                         help="Experiment tag appended to checkpoint directory and log files "
                              "(e.g. --tag resnet18_reg). Lets you run multiple configurations "
                              "without overwriting each other.")
+    parser.add_argument("--aux-loss-weight", type=float, default=None,
+                        help="Override config aux_loss_weight (weight on presence/absence BCE loss).")
     args = parser.parse_args()
     model_type = args.model
     # model_type_tag is used for all file naming so random runs never overwrite real runs
@@ -490,6 +492,8 @@ def main() -> None:
         model_type_tag = f"{model_type_tag}_{args.tag}"
 
     cfg  = load_config()
+    if args.aux_loss_weight is not None:
+        cfg["training_composition"]["aux_loss_weight"] = args.aux_loss_weight
     seed = cfg["project"]["seed"]
     torch.manual_seed(seed)
     np.random.seed(seed)
