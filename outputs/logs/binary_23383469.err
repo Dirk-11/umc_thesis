@@ -1,0 +1,441 @@
+18:08:46 | INFO | Device: cuda
+18:08:46 | INFO | cuDNN benchmark enabled
+18:08:49 | INFO | Skipped 21 rows with no composition data
+18:08:49 | INFO | Recomputed labels at 100.0% threshold: 546 pure / 696 mixed (414 stones)
+18:08:49 | WARNING | Skipped 2 rows whose image files are missing
+18:08:49 | INFO | Built 1240 samples from 414 stones
+18:08:49 | INFO | Test holdout: 83 stones (36 pure / 47 mixed, 248 images). Train+val pool: 331 stones (992 images).
+18:08:49 | INFO |   Fold 0: train=264 stones (116 pure / 148 mixed, 792 images), val=67 stones (30 pure / 37 mixed, 200 images)
+18:08:49 | INFO |   Fold 1: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+18:08:49 | INFO |   Fold 2: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+18:08:49 | INFO |   Fold 3: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+18:08:49 | INFO |   Fold 4: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+18:08:49 | INFO | Config snapshot saved to /gpfs/home3/ddboer/umc_thesis/outputs/checkpoints/binary/config_snapshot.yaml
+18:08:49 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+18:08:50 | INFO | Fold 0 — Phase 1: frozen backbone, 5 epochs
+18:08:50 | INFO |   Trainable params: 1,026
+18:09:41 | INFO |   [frozen] epoch 1/5 | train_loss=0.7957 | val_loss=0.7237 | val_stone_acc=0.567 | val_stone_f1=0.718 | 52s
+18:10:32 | INFO |   [frozen] epoch 2/5 | train_loss=0.7994 | val_loss=0.6648 | val_stone_acc=0.582 | val_stone_f1=0.714 | 50s
+18:11:22 | INFO |   [frozen] epoch 3/5 | train_loss=0.7384 | val_loss=0.6590 | val_stone_acc=0.567 | val_stone_f1=0.525 | 50s
+18:12:13 | INFO |   [frozen] epoch 4/5 | train_loss=0.7213 | val_loss=0.6507 | val_stone_acc=0.687 | val_stone_f1=0.769 | 50s
+18:13:03 | INFO |   [frozen] epoch 5/5 | train_loss=0.7335 | val_loss=0.6548 | val_stone_acc=0.672 | val_stone_f1=0.766 | 51s
+18:13:03 | INFO |   Trainable params: 11,177,538
+18:13:54 | INFO |   [finetune] epoch 1/20 | train_loss=0.7080 | val_loss=0.6398 | val_stone_acc=0.657 | val_stone_f1=0.729 | 51s
+18:14:45 | INFO |   [finetune] epoch 2/20 | train_loss=0.6770 | val_loss=0.6251 | val_stone_acc=0.687 | val_stone_f1=0.769 | 51s
+18:15:36 | INFO |   [finetune] epoch 3/20 | train_loss=0.6655 | val_loss=0.6490 | val_stone_acc=0.552 | val_stone_f1=0.464 | 51s
+18:16:27 | INFO |   [finetune] epoch 4/20 | train_loss=0.6526 | val_loss=0.6063 | val_stone_acc=0.672 | val_stone_f1=0.750 | 51s
+18:17:18 | INFO |   [finetune] epoch 5/20 | train_loss=0.6262 | val_loss=0.6105 | val_stone_acc=0.687 | val_stone_f1=0.720 | 51s
+18:18:09 | INFO |   [finetune] epoch 6/20 | train_loss=0.6526 | val_loss=0.6080 | val_stone_acc=0.687 | val_stone_f1=0.734 | 51s
+18:19:00 | INFO |   [finetune] epoch 7/20 | train_loss=0.6423 | val_loss=0.6197 | val_stone_acc=0.582 | val_stone_f1=0.588 | 51s
+18:19:51 | INFO |   [finetune] epoch 8/20 | train_loss=0.6276 | val_loss=0.6254 | val_stone_acc=0.567 | val_stone_f1=0.567 | 51s
+18:20:41 | INFO |   [finetune] epoch 9/20 | train_loss=0.6281 | val_loss=0.6187 | val_stone_acc=0.672 | val_stone_f1=0.732 | 51s
+18:21:32 | INFO |   [finetune] epoch 10/20 | train_loss=0.6155 | val_loss=0.6187 | val_stone_acc=0.731 | val_stone_f1=0.795 | 51s
+18:22:23 | INFO |   [finetune] epoch 11/20 | train_loss=0.5983 | val_loss=0.6241 | val_stone_acc=0.716 | val_stone_f1=0.787 | 51s
+18:22:23 | INFO |   Early stopping (no improvement for 7 epochs)
+18:22:23 | INFO | Fold 0 done. Best val_loss=0.6063 at epoch 8
+18:22:23 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+18:22:23 | INFO | Fold 1 — Phase 1: frozen backbone, 5 epochs
+18:22:23 | INFO |   Trainable params: 1,026
+18:23:13 | INFO |   [frozen] epoch 1/5 | train_loss=0.8104 | val_loss=0.6855 | val_stone_acc=0.606 | val_stone_f1=0.735 | 50s
+18:24:03 | INFO |   [frozen] epoch 2/5 | train_loss=0.7812 | val_loss=0.7189 | val_stone_acc=0.515 | val_stone_f1=0.628 | 50s
+18:24:52 | INFO |   [frozen] epoch 3/5 | train_loss=0.7214 | val_loss=0.7295 | val_stone_acc=0.485 | val_stone_f1=0.528 | 49s
+18:25:42 | INFO |   [frozen] epoch 4/5 | train_loss=0.7282 | val_loss=0.6899 | val_stone_acc=0.561 | val_stone_f1=0.667 | 50s
+18:26:32 | INFO |   [frozen] epoch 5/5 | train_loss=0.7137 | val_loss=0.6790 | val_stone_acc=0.606 | val_stone_f1=0.705 | 50s
+18:26:32 | INFO |   Trainable params: 11,177,538
+18:27:23 | INFO |   [finetune] epoch 1/20 | train_loss=0.7426 | val_loss=0.6898 | val_stone_acc=0.515 | val_stone_f1=0.484 | 50s
+18:28:13 | INFO |   [finetune] epoch 2/20 | train_loss=0.6636 | val_loss=0.6639 | val_stone_acc=0.591 | val_stone_f1=0.630 | 50s
+18:29:03 | INFO |   [finetune] epoch 3/20 | train_loss=0.6623 | val_loss=0.6504 | val_stone_acc=0.621 | val_stone_f1=0.706 | 50s
+18:29:53 | INFO |   [finetune] epoch 4/20 | train_loss=0.6489 | val_loss=0.6541 | val_stone_acc=0.606 | val_stone_f1=0.667 | 50s
+18:30:43 | INFO |   [finetune] epoch 5/20 | train_loss=0.6522 | val_loss=0.6641 | val_stone_acc=0.576 | val_stone_f1=0.588 | 50s
+18:31:33 | INFO |   [finetune] epoch 6/20 | train_loss=0.6324 | val_loss=0.6646 | val_stone_acc=0.652 | val_stone_f1=0.657 | 50s
+18:32:23 | INFO |   [finetune] epoch 7/20 | train_loss=0.6205 | val_loss=0.6463 | val_stone_acc=0.667 | val_stone_f1=0.703 | 50s
+18:33:14 | INFO |   [finetune] epoch 8/20 | train_loss=0.6003 | val_loss=0.6596 | val_stone_acc=0.636 | val_stone_f1=0.657 | 50s
+18:34:04 | INFO |   [finetune] epoch 9/20 | train_loss=0.5859 | val_loss=0.6424 | val_stone_acc=0.652 | val_stone_f1=0.701 | 50s
+18:34:54 | INFO |   [finetune] epoch 10/20 | train_loss=0.6488 | val_loss=0.6419 | val_stone_acc=0.636 | val_stone_f1=0.676 | 50s
+18:35:44 | INFO |   [finetune] epoch 11/20 | train_loss=0.5816 | val_loss=0.6509 | val_stone_acc=0.636 | val_stone_f1=0.636 | 50s
+18:36:34 | INFO |   [finetune] epoch 12/20 | train_loss=0.5828 | val_loss=0.6400 | val_stone_acc=0.591 | val_stone_f1=0.620 | 50s
+18:37:24 | INFO |   [finetune] epoch 13/20 | train_loss=0.5690 | val_loss=0.6260 | val_stone_acc=0.667 | val_stone_f1=0.718 | 50s
+18:38:15 | INFO |   [finetune] epoch 14/20 | train_loss=0.5671 | val_loss=0.6306 | val_stone_acc=0.652 | val_stone_f1=0.693 | 50s
+18:39:05 | INFO |   [finetune] epoch 15/20 | train_loss=0.5726 | val_loss=0.6208 | val_stone_acc=0.682 | val_stone_f1=0.734 | 50s
+18:39:55 | INFO |   [finetune] epoch 16/20 | train_loss=0.5465 | val_loss=0.6405 | val_stone_acc=0.682 | val_stone_f1=0.764 | 50s
+18:40:45 | INFO |   [finetune] epoch 17/20 | train_loss=0.5777 | val_loss=0.6230 | val_stone_acc=0.682 | val_stone_f1=0.727 | 50s
+18:41:36 | INFO |   [finetune] epoch 18/20 | train_loss=0.5364 | val_loss=0.6728 | val_stone_acc=0.606 | val_stone_f1=0.606 | 50s
+18:42:26 | INFO |   [finetune] epoch 19/20 | train_loss=0.5341 | val_loss=0.6367 | val_stone_acc=0.636 | val_stone_f1=0.692 | 50s
+18:43:16 | INFO |   [finetune] epoch 20/20 | train_loss=0.5406 | val_loss=0.6544 | val_stone_acc=0.636 | val_stone_f1=0.647 | 50s
+18:43:16 | INFO | Fold 1 done. Best val_loss=0.6208 at epoch 19
+18:43:16 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+18:43:16 | INFO | Fold 2 — Phase 1: frozen backbone, 5 epochs
+18:43:16 | INFO |   Trainable params: 1,026
+18:44:06 | INFO |   [frozen] epoch 1/5 | train_loss=0.7585 | val_loss=0.6576 | val_stone_acc=0.606 | val_stone_f1=0.649 | 50s
+18:44:56 | INFO |   [frozen] epoch 2/5 | train_loss=0.7517 | val_loss=0.6667 | val_stone_acc=0.621 | val_stone_f1=0.528 | 50s
+18:45:46 | INFO |   [frozen] epoch 3/5 | train_loss=0.7219 | val_loss=0.6410 | val_stone_acc=0.621 | val_stone_f1=0.603 | 50s
+18:46:36 | INFO |   [frozen] epoch 4/5 | train_loss=0.7106 | val_loss=0.6246 | val_stone_acc=0.652 | val_stone_f1=0.667 | 50s
+18:47:25 | INFO |   [frozen] epoch 5/5 | train_loss=0.7191 | val_loss=0.6286 | val_stone_acc=0.606 | val_stone_f1=0.552 | 50s
+18:47:25 | INFO |   Trainable params: 11,177,538
+18:48:15 | INFO |   [finetune] epoch 1/20 | train_loss=0.6973 | val_loss=0.6501 | val_stone_acc=0.576 | val_stone_f1=0.417 | 50s
+18:49:05 | INFO |   [finetune] epoch 2/20 | train_loss=0.6913 | val_loss=0.5954 | val_stone_acc=0.727 | val_stone_f1=0.795 | 50s
+18:49:54 | INFO |   [finetune] epoch 3/20 | train_loss=0.6670 | val_loss=0.5865 | val_stone_acc=0.773 | val_stone_f1=0.824 | 49s
+18:50:44 | INFO |   [finetune] epoch 4/20 | train_loss=0.6663 | val_loss=0.5984 | val_stone_acc=0.758 | val_stone_f1=0.818 | 49s
+18:51:33 | INFO |   [finetune] epoch 5/20 | train_loss=0.6522 | val_loss=0.6164 | val_stone_acc=0.636 | val_stone_f1=0.613 | 50s
+18:52:23 | INFO |   [finetune] epoch 6/20 | train_loss=0.6394 | val_loss=0.5869 | val_stone_acc=0.727 | val_stone_f1=0.743 | 50s
+18:53:12 | INFO |   [finetune] epoch 7/20 | train_loss=0.6217 | val_loss=0.5771 | val_stone_acc=0.773 | val_stone_f1=0.810 | 50s
+18:54:02 | INFO |   [finetune] epoch 8/20 | train_loss=0.6415 | val_loss=0.6018 | val_stone_acc=0.636 | val_stone_f1=0.625 | 49s
+18:54:51 | INFO |   [finetune] epoch 9/20 | train_loss=0.6328 | val_loss=0.5960 | val_stone_acc=0.667 | val_stone_f1=0.656 | 50s
+18:55:41 | INFO |   [finetune] epoch 10/20 | train_loss=0.6013 | val_loss=0.5971 | val_stone_acc=0.727 | val_stone_f1=0.800 | 49s
+18:56:30 | INFO |   [finetune] epoch 11/20 | train_loss=0.6073 | val_loss=0.6049 | val_stone_acc=0.636 | val_stone_f1=0.625 | 49s
+18:57:20 | INFO |   [finetune] epoch 12/20 | train_loss=0.6066 | val_loss=0.5877 | val_stone_acc=0.682 | val_stone_f1=0.696 | 50s
+18:58:10 | INFO |   [finetune] epoch 13/20 | train_loss=0.5921 | val_loss=0.5778 | val_stone_acc=0.773 | val_stone_f1=0.815 | 50s
+18:59:01 | INFO |   [finetune] epoch 14/20 | train_loss=0.5850 | val_loss=0.6128 | val_stone_acc=0.636 | val_stone_f1=0.636 | 51s
+18:59:01 | INFO |   Early stopping (no improvement for 7 epochs)
+18:59:01 | INFO | Fold 2 done. Best val_loss=0.5771 at epoch 11
+18:59:01 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+18:59:01 | INFO | Fold 3 — Phase 1: frozen backbone, 5 epochs
+18:59:01 | INFO |   Trainable params: 1,026
+18:59:51 | INFO |   [frozen] epoch 1/5 | train_loss=0.7951 | val_loss=0.6948 | val_stone_acc=0.561 | val_stone_f1=0.718 | 50s
+19:00:41 | INFO |   [frozen] epoch 2/5 | train_loss=0.7545 | val_loss=0.6650 | val_stone_acc=0.591 | val_stone_f1=0.675 | 50s
+19:01:31 | INFO |   [frozen] epoch 3/5 | train_loss=0.7123 | val_loss=0.6584 | val_stone_acc=0.606 | val_stone_f1=0.649 | 50s
+19:02:22 | INFO |   [frozen] epoch 4/5 | train_loss=0.7028 | val_loss=0.6549 | val_stone_acc=0.606 | val_stone_f1=0.717 | 50s
+19:03:11 | INFO |   [frozen] epoch 5/5 | train_loss=0.7086 | val_loss=0.6540 | val_stone_acc=0.621 | val_stone_f1=0.658 | 50s
+19:03:12 | INFO |   Trainable params: 11,177,538
+19:04:02 | INFO |   [finetune] epoch 1/20 | train_loss=0.7393 | val_loss=0.6356 | val_stone_acc=0.667 | val_stone_f1=0.725 | 50s
+19:04:52 | INFO |   [finetune] epoch 2/20 | train_loss=0.6973 | val_loss=0.6557 | val_stone_acc=0.591 | val_stone_f1=0.722 | 50s
+19:05:41 | INFO |   [finetune] epoch 3/20 | train_loss=0.6879 | val_loss=0.6644 | val_stone_acc=0.652 | val_stone_f1=0.635 | 50s
+19:06:32 | INFO |   [finetune] epoch 4/20 | train_loss=0.6282 | val_loss=0.6448 | val_stone_acc=0.667 | val_stone_f1=0.694 | 50s
+19:07:21 | INFO |   [finetune] epoch 5/20 | train_loss=0.6480 | val_loss=0.6320 | val_stone_acc=0.727 | val_stone_f1=0.780 | 50s
+19:08:12 | INFO |   [finetune] epoch 6/20 | train_loss=0.6411 | val_loss=0.6242 | val_stone_acc=0.697 | val_stone_f1=0.750 | 50s
+19:09:02 | INFO |   [finetune] epoch 7/20 | train_loss=0.6271 | val_loss=0.6264 | val_stone_acc=0.636 | val_stone_f1=0.636 | 50s
+19:09:52 | INFO |   [finetune] epoch 8/20 | train_loss=0.6201 | val_loss=0.6096 | val_stone_acc=0.712 | val_stone_f1=0.740 | 50s
+19:10:42 | INFO |   [finetune] epoch 9/20 | train_loss=0.5873 | val_loss=0.6203 | val_stone_acc=0.682 | val_stone_f1=0.696 | 50s
+19:11:32 | INFO |   [finetune] epoch 10/20 | train_loss=0.6131 | val_loss=0.6222 | val_stone_acc=0.697 | val_stone_f1=0.762 | 51s
+19:12:23 | INFO |   [finetune] epoch 11/20 | train_loss=0.6066 | val_loss=0.6281 | val_stone_acc=0.697 | val_stone_f1=0.714 | 51s
+19:13:13 | INFO |   [finetune] epoch 12/20 | train_loss=0.6082 | val_loss=0.6581 | val_stone_acc=0.667 | val_stone_f1=0.676 | 50s
+19:14:04 | INFO |   [finetune] epoch 13/20 | train_loss=0.5695 | val_loss=0.6222 | val_stone_acc=0.682 | val_stone_f1=0.741 | 51s
+19:14:54 | INFO |   [finetune] epoch 14/20 | train_loss=0.5836 | val_loss=0.6362 | val_stone_acc=0.682 | val_stone_f1=0.712 | 50s
+19:15:44 | INFO |   [finetune] epoch 15/20 | train_loss=0.5591 | val_loss=0.6238 | val_stone_acc=0.682 | val_stone_f1=0.720 | 50s
+19:15:44 | INFO |   Early stopping (no improvement for 7 epochs)
+19:15:44 | INFO | Fold 3 done. Best val_loss=0.6096 at epoch 12
+19:15:45 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:15:45 | INFO | Fold 4 — Phase 1: frozen backbone, 5 epochs
+19:15:45 | INFO |   Trainable params: 1,026
+19:16:36 | INFO |   [frozen] epoch 1/5 | train_loss=0.7854 | val_loss=0.7176 | val_stone_acc=0.424 | val_stone_f1=0.136 | 51s
+19:17:26 | INFO |   [frozen] epoch 2/5 | train_loss=0.7188 | val_loss=0.6893 | val_stone_acc=0.636 | val_stone_f1=0.700 | 50s
+19:18:16 | INFO |   [frozen] epoch 3/5 | train_loss=0.7064 | val_loss=0.6843 | val_stone_acc=0.606 | val_stone_f1=0.649 | 50s
+19:19:06 | INFO |   [frozen] epoch 4/5 | train_loss=0.7542 | val_loss=0.7095 | val_stone_acc=0.515 | val_stone_f1=0.448 | 50s
+19:19:56 | INFO |   [frozen] epoch 5/5 | train_loss=0.6952 | val_loss=0.7567 | val_stone_acc=0.439 | val_stone_f1=0.178 | 50s
+19:19:56 | INFO |   Trainable params: 11,177,538
+19:20:46 | INFO |   [finetune] epoch 1/20 | train_loss=0.6884 | val_loss=0.6425 | val_stone_acc=0.697 | val_stone_f1=0.756 | 51s
+19:21:37 | INFO |   [finetune] epoch 2/20 | train_loss=0.6946 | val_loss=0.6220 | val_stone_acc=0.727 | val_stone_f1=0.780 | 50s
+19:22:28 | INFO |   [finetune] epoch 3/20 | train_loss=0.6900 | val_loss=0.6129 | val_stone_acc=0.727 | val_stone_f1=0.780 | 51s
+19:23:18 | INFO |   [finetune] epoch 4/20 | train_loss=0.6400 | val_loss=0.6823 | val_stone_acc=0.500 | val_stone_f1=0.327 | 50s
+19:24:08 | INFO |   [finetune] epoch 5/20 | train_loss=0.6414 | val_loss=0.6163 | val_stone_acc=0.727 | val_stone_f1=0.769 | 50s
+19:24:59 | INFO |   [finetune] epoch 6/20 | train_loss=0.6292 | val_loss=0.6233 | val_stone_acc=0.697 | val_stone_f1=0.773 | 50s
+19:25:49 | INFO |   [finetune] epoch 7/20 | train_loss=0.6450 | val_loss=0.6270 | val_stone_acc=0.712 | val_stone_f1=0.732 | 50s
+19:26:40 | INFO |   [finetune] epoch 8/20 | train_loss=0.5940 | val_loss=0.6608 | val_stone_acc=0.561 | val_stone_f1=0.491 | 50s
+19:27:30 | INFO |   [finetune] epoch 9/20 | train_loss=0.6111 | val_loss=0.6113 | val_stone_acc=0.758 | val_stone_f1=0.789 | 50s
+19:28:21 | INFO |   [finetune] epoch 10/20 | train_loss=0.5878 | val_loss=0.6251 | val_stone_acc=0.667 | val_stone_f1=0.645 | 50s
+19:29:11 | INFO |   [finetune] epoch 11/20 | train_loss=0.5940 | val_loss=0.6324 | val_stone_acc=0.682 | val_stone_f1=0.667 | 50s
+19:30:01 | INFO |   [finetune] epoch 12/20 | train_loss=0.5777 | val_loss=0.6321 | val_stone_acc=0.667 | val_stone_f1=0.676 | 50s
+19:30:52 | INFO |   [finetune] epoch 13/20 | train_loss=0.5446 | val_loss=0.6372 | val_stone_acc=0.682 | val_stone_f1=0.687 | 51s
+19:31:43 | INFO |   [finetune] epoch 14/20 | train_loss=0.5598 | val_loss=0.6353 | val_stone_acc=0.697 | val_stone_f1=0.706 | 51s
+19:32:33 | INFO |   [finetune] epoch 15/20 | train_loss=0.5388 | val_loss=0.6529 | val_stone_acc=0.652 | val_stone_f1=0.646 | 51s
+19:33:24 | INFO |   [finetune] epoch 16/20 | train_loss=0.5484 | val_loss=0.6165 | val_stone_acc=0.727 | val_stone_f1=0.750 | 51s
+19:33:24 | INFO |   Early stopping (no improvement for 7 epochs)
+19:33:24 | INFO | Fold 4 done. Best val_loss=0.6113 at epoch 13
+19:33:24 | INFO | Cross-fold summary:
+19:33:24 | INFO | === Held-out test set evaluation ===
+19:33:24 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:33:41 | INFO |   Fold 0 test: stone_acc=0.663 | stone_f1=0.736 | stone_roc_auc=0.694
+19:33:42 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:33:58 | INFO |   Fold 1 test: stone_acc=0.639 | stone_f1=0.722 | stone_roc_auc=0.716
+19:33:58 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:34:15 | INFO |   Fold 2 test: stone_acc=0.651 | stone_f1=0.739 | stone_roc_auc=0.703
+19:34:15 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:34:32 | INFO |   Fold 3 test: stone_acc=0.639 | stone_f1=0.706 | stone_roc_auc=0.692
+19:34:32 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:34:49 | INFO |   Fold 4 test: stone_acc=0.663 | stone_f1=0.736 | stone_roc_auc=0.726
+19:34:49 | INFO | Test set summary (mean ± std across folds):
+19:34:49 | INFO |   stone_accuracy: 0.651 ± 0.012
+19:34:49 | INFO |   stone_f1: 0.728 ± 0.014
+19:34:49 | INFO |   stone_roc_auc: 0.706 ± 0.015
+19:34:54 | INFO | Device: cuda
+19:34:54 | INFO | cuDNN benchmark enabled
+19:34:56 | INFO | Skipped 21 rows with no composition data
+19:34:56 | INFO | Recomputed labels at 90.0% threshold: 783 pure / 459 mixed (414 stones)
+19:34:56 | WARNING | Skipped 2 rows whose image files are missing
+19:34:56 | INFO | Built 1240 samples from 414 stones
+19:34:56 | INFO | Test holdout: 83 stones (52 pure / 31 mixed, 248 images). Train+val pool: 331 stones (992 images).
+19:34:57 | INFO |   Fold 0: train=264 stones (167 pure / 97 mixed, 791 images), val=67 stones (42 pure / 25 mixed, 201 images)
+19:34:57 | INFO |   Fold 1: train=265 stones (167 pure / 98 mixed, 794 images), val=66 stones (42 pure / 24 mixed, 198 images)
+19:34:57 | INFO |   Fold 2: train=265 stones (167 pure / 98 mixed, 794 images), val=66 stones (42 pure / 24 mixed, 198 images)
+19:34:57 | INFO |   Fold 3: train=265 stones (167 pure / 98 mixed, 795 images), val=66 stones (42 pure / 24 mixed, 197 images)
+19:34:57 | INFO |   Fold 4: train=265 stones (168 pure / 97 mixed, 794 images), val=66 stones (41 pure / 25 mixed, 198 images)
+19:34:57 | INFO | Config snapshot saved to /gpfs/home3/ddboer/umc_thesis/outputs/checkpoints/binary_t90/config_snapshot.yaml
+19:34:57 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:34:57 | INFO | Fold 0 — Phase 1: frozen backbone, 5 epochs
+19:34:57 | INFO |   Trainable params: 1,026
+19:35:48 | INFO |   [frozen] epoch 1/5 | train_loss=0.7781 | val_loss=0.8270 | val_stone_acc=0.373 | val_stone_f1=0.533 | 51s
+19:36:39 | INFO |   [frozen] epoch 2/5 | train_loss=0.7456 | val_loss=0.6596 | val_stone_acc=0.597 | val_stone_f1=0.129 | 51s
+19:37:30 | INFO |   [frozen] epoch 3/5 | train_loss=0.6922 | val_loss=0.6590 | val_stone_acc=0.642 | val_stone_f1=0.143 | 51s
+19:38:20 | INFO |   [frozen] epoch 4/5 | train_loss=0.7048 | val_loss=0.6722 | val_stone_acc=0.612 | val_stone_f1=0.071 | 51s
+19:39:11 | INFO |   [frozen] epoch 5/5 | train_loss=0.7387 | val_loss=0.6711 | val_stone_acc=0.567 | val_stone_f1=0.171 | 51s
+19:39:11 | INFO |   Trainable params: 11,177,538
+19:40:02 | INFO |   [finetune] epoch 1/20 | train_loss=0.6601 | val_loss=0.7034 | val_stone_acc=0.612 | val_stone_f1=0.071 | 51s
+19:40:53 | INFO |   [finetune] epoch 2/20 | train_loss=0.6661 | val_loss=0.6804 | val_stone_acc=0.567 | val_stone_f1=0.326 | 51s
+19:41:43 | INFO |   [finetune] epoch 3/20 | train_loss=0.6334 | val_loss=0.6922 | val_stone_acc=0.597 | val_stone_f1=0.182 | 51s
+19:42:34 | INFO |   [finetune] epoch 4/20 | train_loss=0.6408 | val_loss=0.7544 | val_stone_acc=0.627 | val_stone_f1=0.000 | 51s
+19:43:25 | INFO |   [finetune] epoch 5/20 | train_loss=0.6234 | val_loss=0.7731 | val_stone_acc=0.627 | val_stone_f1=0.074 | 51s
+19:44:16 | INFO |   [finetune] epoch 6/20 | train_loss=0.6163 | val_loss=0.7151 | val_stone_acc=0.597 | val_stone_f1=0.229 | 51s
+19:45:08 | INFO |   [finetune] epoch 7/20 | train_loss=0.6098 | val_loss=0.7028 | val_stone_acc=0.612 | val_stone_f1=0.235 | 51s
+19:45:58 | INFO |   [finetune] epoch 8/20 | train_loss=0.5911 | val_loss=0.6877 | val_stone_acc=0.597 | val_stone_f1=0.372 | 51s
+19:46:49 | INFO |   [finetune] epoch 9/20 | train_loss=0.5678 | val_loss=0.6812 | val_stone_acc=0.627 | val_stone_f1=0.286 | 51s
+19:46:49 | INFO |   Early stopping (no improvement for 7 epochs)
+19:46:49 | INFO | Fold 0 done. Best val_loss=0.6804 at epoch 6
+19:46:49 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+19:46:49 | INFO | Fold 1 — Phase 1: frozen backbone, 5 epochs
+19:46:49 | INFO |   Trainable params: 1,026
+19:47:39 | INFO |   [frozen] epoch 1/5 | train_loss=0.7758 | val_loss=0.6598 | val_stone_acc=0.606 | val_stone_f1=0.071 | 50s
+19:48:29 | INFO |   [frozen] epoch 2/5 | train_loss=0.7428 | val_loss=0.6876 | val_stone_acc=0.636 | val_stone_f1=0.000 | 50s
+19:49:19 | INFO |   [frozen] epoch 3/5 | train_loss=0.7270 | val_loss=0.6604 | val_stone_acc=0.636 | val_stone_f1=0.333 | 49s
+19:50:08 | INFO |   [frozen] epoch 4/5 | train_loss=0.6615 | val_loss=0.6477 | val_stone_acc=0.621 | val_stone_f1=0.074 | 50s
+19:50:58 | INFO |   [frozen] epoch 5/5 | train_loss=0.7070 | val_loss=0.6769 | val_stone_acc=0.636 | val_stone_f1=0.000 | 50s
+19:50:58 | INFO |   Trainable params: 11,177,538
+19:51:48 | INFO |   [finetune] epoch 1/20 | train_loss=0.7094 | val_loss=0.6603 | val_stone_acc=0.606 | val_stone_f1=0.536 | 50s
+19:52:37 | INFO |   [finetune] epoch 2/20 | train_loss=0.6750 | val_loss=0.6274 | val_stone_acc=0.636 | val_stone_f1=0.143 | 50s
+19:53:27 | INFO |   [finetune] epoch 3/20 | train_loss=0.6385 | val_loss=0.6345 | val_stone_acc=0.621 | val_stone_f1=0.000 | 50s
+19:54:16 | INFO |   [finetune] epoch 4/20 | train_loss=0.6561 | val_loss=0.6750 | val_stone_acc=0.636 | val_stone_f1=0.000 | 50s
+19:55:06 | INFO |   [finetune] epoch 5/20 | train_loss=0.6401 | val_loss=0.6798 | val_stone_acc=0.636 | val_stone_f1=0.000 | 49s
+19:55:55 | INFO |   [finetune] epoch 6/20 | train_loss=0.6414 | val_loss=0.6223 | val_stone_acc=0.682 | val_stone_f1=0.488 | 50s
+19:56:45 | INFO |   [finetune] epoch 7/20 | train_loss=0.6097 | val_loss=0.6308 | val_stone_acc=0.652 | val_stone_f1=0.080 | 50s
+19:57:34 | INFO |   [finetune] epoch 8/20 | train_loss=0.6044 | val_loss=0.6198 | val_stone_acc=0.652 | val_stone_f1=0.148 | 50s
+19:58:24 | INFO |   [finetune] epoch 9/20 | train_loss=0.6182 | val_loss=0.5961 | val_stone_acc=0.667 | val_stone_f1=0.389 | 50s
+19:59:14 | INFO |   [finetune] epoch 10/20 | train_loss=0.5851 | val_loss=0.6193 | val_stone_acc=0.636 | val_stone_f1=0.200 | 50s
+20:00:03 | INFO |   [finetune] epoch 11/20 | train_loss=0.5927 | val_loss=0.6124 | val_stone_acc=0.727 | val_stone_f1=0.591 | 50s
+20:00:53 | INFO |   [finetune] epoch 12/20 | train_loss=0.6007 | val_loss=0.6223 | val_stone_acc=0.652 | val_stone_f1=0.258 | 49s
+20:01:42 | INFO |   [finetune] epoch 13/20 | train_loss=0.5550 | val_loss=0.5947 | val_stone_acc=0.682 | val_stone_f1=0.400 | 50s
+20:02:32 | INFO |   [finetune] epoch 14/20 | train_loss=0.5645 | val_loss=0.6037 | val_stone_acc=0.682 | val_stone_f1=0.400 | 50s
+20:03:21 | INFO |   [finetune] epoch 15/20 | train_loss=0.5678 | val_loss=0.6101 | val_stone_acc=0.727 | val_stone_f1=0.550 | 49s
+20:04:11 | INFO |   [finetune] epoch 16/20 | train_loss=0.5550 | val_loss=0.6043 | val_stone_acc=0.682 | val_stone_f1=0.432 | 49s
+20:05:00 | INFO |   [finetune] epoch 17/20 | train_loss=0.5421 | val_loss=0.6068 | val_stone_acc=0.727 | val_stone_f1=0.500 | 49s
+20:05:50 | INFO |   [finetune] epoch 18/20 | train_loss=0.5158 | val_loss=0.6267 | val_stone_acc=0.667 | val_stone_f1=0.312 | 49s
+20:06:39 | INFO |   [finetune] epoch 19/20 | train_loss=0.5466 | val_loss=0.6147 | val_stone_acc=0.742 | val_stone_f1=0.541 | 50s
+20:07:29 | INFO |   [finetune] epoch 20/20 | train_loss=0.4982 | val_loss=0.6181 | val_stone_acc=0.727 | val_stone_f1=0.500 | 50s
+20:07:29 | INFO |   Early stopping (no improvement for 7 epochs)
+20:07:29 | INFO | Fold 1 done. Best val_loss=0.5947 at epoch 17
+20:07:29 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+20:07:29 | INFO | Fold 2 — Phase 1: frozen backbone, 5 epochs
+20:07:29 | INFO |   Trainable params: 1,026
+20:08:20 | INFO |   [frozen] epoch 1/5 | train_loss=0.7794 | val_loss=0.7454 | val_stone_acc=0.424 | val_stone_f1=0.525 | 51s
+20:09:10 | INFO |   [frozen] epoch 2/5 | train_loss=0.7094 | val_loss=0.6650 | val_stone_acc=0.576 | val_stone_f1=0.125 | 50s
+20:09:59 | INFO |   [frozen] epoch 3/5 | train_loss=0.7065 | val_loss=0.6532 | val_stone_acc=0.636 | val_stone_f1=0.000 | 50s
+20:10:49 | INFO |   [frozen] epoch 4/5 | train_loss=0.6693 | val_loss=0.6532 | val_stone_acc=0.667 | val_stone_f1=0.154 | 50s
+20:11:39 | INFO |   [frozen] epoch 5/5 | train_loss=0.6638 | val_loss=0.6561 | val_stone_acc=0.652 | val_stone_f1=0.489 | 50s
+20:11:39 | INFO |   Trainable params: 11,177,538
+20:12:29 | INFO |   [finetune] epoch 1/20 | train_loss=0.6803 | val_loss=0.6732 | val_stone_acc=0.606 | val_stone_f1=0.500 | 50s
+20:13:20 | INFO |   [finetune] epoch 2/20 | train_loss=0.6516 | val_loss=0.6557 | val_stone_acc=0.667 | val_stone_f1=0.312 | 50s
+20:14:10 | INFO |   [finetune] epoch 3/20 | train_loss=0.6183 | val_loss=0.6461 | val_stone_acc=0.621 | val_stone_f1=0.138 | 51s
+20:15:01 | INFO |   [finetune] epoch 4/20 | train_loss=0.6220 | val_loss=0.6347 | val_stone_acc=0.636 | val_stone_f1=0.143 | 51s
+20:15:52 | INFO |   [finetune] epoch 5/20 | train_loss=0.6241 | val_loss=0.6687 | val_stone_acc=0.636 | val_stone_f1=0.143 | 51s
+20:16:43 | INFO |   [finetune] epoch 6/20 | train_loss=0.6279 | val_loss=0.6287 | val_stone_acc=0.697 | val_stone_f1=0.500 | 51s
+20:17:34 | INFO |   [finetune] epoch 7/20 | train_loss=0.6113 | val_loss=0.6370 | val_stone_acc=0.667 | val_stone_f1=0.353 | 51s
+20:18:24 | INFO |   [finetune] epoch 8/20 | train_loss=0.5876 | val_loss=0.6382 | val_stone_acc=0.667 | val_stone_f1=0.353 | 51s
+20:19:15 | INFO |   [finetune] epoch 9/20 | train_loss=0.5713 | val_loss=0.6300 | val_stone_acc=0.697 | val_stone_f1=0.444 | 51s
+20:20:06 | INFO |   [finetune] epoch 10/20 | train_loss=0.5862 | val_loss=0.6173 | val_stone_acc=0.697 | val_stone_f1=0.412 | 51s
+20:20:57 | INFO |   [finetune] epoch 11/20 | train_loss=0.5727 | val_loss=0.6462 | val_stone_acc=0.667 | val_stone_f1=0.421 | 51s
+20:21:48 | INFO |   [finetune] epoch 12/20 | train_loss=0.5646 | val_loss=0.6432 | val_stone_acc=0.652 | val_stone_f1=0.465 | 51s
+20:22:38 | INFO |   [finetune] epoch 13/20 | train_loss=0.5492 | val_loss=0.6409 | val_stone_acc=0.652 | val_stone_f1=0.410 | 51s
+20:23:29 | INFO |   [finetune] epoch 14/20 | train_loss=0.5530 | val_loss=0.6988 | val_stone_acc=0.636 | val_stone_f1=0.143 | 50s
+20:24:20 | INFO |   [finetune] epoch 15/20 | train_loss=0.5583 | val_loss=0.6505 | val_stone_acc=0.667 | val_stone_f1=0.522 | 51s
+20:25:10 | INFO |   [finetune] epoch 16/20 | train_loss=0.5830 | val_loss=0.6641 | val_stone_acc=0.636 | val_stone_f1=0.250 | 51s
+20:26:01 | INFO |   [finetune] epoch 17/20 | train_loss=0.5345 | val_loss=0.6403 | val_stone_acc=0.652 | val_stone_f1=0.439 | 50s
+20:26:01 | INFO |   Early stopping (no improvement for 7 epochs)
+20:26:01 | INFO | Fold 2 done. Best val_loss=0.6173 at epoch 14
+20:26:01 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+20:26:01 | INFO | Fold 3 — Phase 1: frozen backbone, 5 epochs
+20:26:01 | INFO |   Trainable params: 1,026
+20:26:52 | INFO |   [frozen] epoch 1/5 | train_loss=0.8147 | val_loss=0.7588 | val_stone_acc=0.439 | val_stone_f1=0.565 | 51s
+20:27:42 | INFO |   [frozen] epoch 2/5 | train_loss=0.7980 | val_loss=0.6668 | val_stone_acc=0.576 | val_stone_f1=0.481 | 50s
+20:28:33 | INFO |   [frozen] epoch 3/5 | train_loss=0.7511 | val_loss=0.6805 | val_stone_acc=0.636 | val_stone_f1=0.000 | 50s
+20:29:23 | INFO |   [frozen] epoch 4/5 | train_loss=0.7457 | val_loss=0.6494 | val_stone_acc=0.636 | val_stone_f1=0.143 | 50s
+20:30:13 | INFO |   [frozen] epoch 5/5 | train_loss=0.6709 | val_loss=0.6491 | val_stone_acc=0.667 | val_stone_f1=0.267 | 51s
+20:30:13 | INFO |   Trainable params: 11,177,538
+20:31:04 | INFO |   [finetune] epoch 1/20 | train_loss=0.6938 | val_loss=0.6559 | val_stone_acc=0.621 | val_stone_f1=0.444 | 51s
+20:31:54 | INFO |   [finetune] epoch 2/20 | train_loss=0.6746 | val_loss=0.6483 | val_stone_acc=0.652 | val_stone_f1=0.258 | 50s
+20:32:44 | INFO |   [finetune] epoch 3/20 | train_loss=0.6323 | val_loss=0.6620 | val_stone_acc=0.652 | val_stone_f1=0.258 | 50s
+20:33:35 | INFO |   [finetune] epoch 4/20 | train_loss=0.6672 | val_loss=0.7071 | val_stone_acc=0.652 | val_stone_f1=0.148 | 51s
+20:34:26 | INFO |   [finetune] epoch 5/20 | train_loss=0.6603 | val_loss=0.7081 | val_stone_acc=0.636 | val_stone_f1=0.077 | 51s
+20:35:16 | INFO |   [finetune] epoch 6/20 | train_loss=0.6381 | val_loss=0.6517 | val_stone_acc=0.606 | val_stone_f1=0.235 | 51s
+20:36:07 | INFO |   [finetune] epoch 7/20 | train_loss=0.6020 | val_loss=0.6689 | val_stone_acc=0.652 | val_stone_f1=0.148 | 51s
+20:36:57 | INFO |   [finetune] epoch 8/20 | train_loss=0.5681 | val_loss=0.6966 | val_stone_acc=0.636 | val_stone_f1=0.077 | 51s
+20:37:48 | INFO |   [finetune] epoch 9/20 | train_loss=0.6009 | val_loss=0.7423 | val_stone_acc=0.636 | val_stone_f1=0.077 | 51s
+20:37:48 | INFO |   Early stopping (no improvement for 7 epochs)
+20:37:48 | INFO | Fold 3 done. Best val_loss=0.6483 at epoch 6
+20:37:48 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+20:37:48 | INFO | Fold 4 — Phase 1: frozen backbone, 5 epochs
+20:37:48 | INFO |   Trainable params: 1,026
+20:38:40 | INFO |   [frozen] epoch 1/5 | train_loss=0.7549 | val_loss=0.6634 | val_stone_acc=0.621 | val_stone_f1=0.074 | 51s
+20:39:31 | INFO |   [frozen] epoch 2/5 | train_loss=0.7474 | val_loss=0.6502 | val_stone_acc=0.621 | val_stone_f1=0.000 | 51s
+20:40:22 | INFO |   [frozen] epoch 3/5 | train_loss=0.7306 | val_loss=0.6390 | val_stone_acc=0.621 | val_stone_f1=0.000 | 51s
+20:41:12 | INFO |   [frozen] epoch 4/5 | train_loss=0.6805 | val_loss=0.6356 | val_stone_acc=0.606 | val_stone_f1=0.000 | 51s
+20:42:03 | INFO |   [frozen] epoch 5/5 | train_loss=0.6842 | val_loss=0.6220 | val_stone_acc=0.682 | val_stone_f1=0.400 | 50s
+20:42:03 | INFO |   Trainable params: 11,177,538
+20:42:53 | INFO |   [finetune] epoch 1/20 | train_loss=0.7067 | val_loss=0.6127 | val_stone_acc=0.591 | val_stone_f1=0.000 | 50s
+20:43:43 | INFO |   [finetune] epoch 2/20 | train_loss=0.6824 | val_loss=0.6058 | val_stone_acc=0.591 | val_stone_f1=0.000 | 50s
+20:44:33 | INFO |   [finetune] epoch 3/20 | train_loss=0.6484 | val_loss=0.5853 | val_stone_acc=0.636 | val_stone_f1=0.077 | 51s
+20:45:24 | INFO |   [finetune] epoch 4/20 | train_loss=0.6454 | val_loss=0.5592 | val_stone_acc=0.652 | val_stone_f1=0.258 | 51s
+20:46:15 | INFO |   [finetune] epoch 5/20 | train_loss=0.6510 | val_loss=0.5751 | val_stone_acc=0.652 | val_stone_f1=0.148 | 51s
+20:47:06 | INFO |   [finetune] epoch 6/20 | train_loss=0.6244 | val_loss=0.5990 | val_stone_acc=0.636 | val_stone_f1=0.077 | 51s
+20:47:56 | INFO |   [finetune] epoch 7/20 | train_loss=0.6297 | val_loss=0.5718 | val_stone_acc=0.621 | val_stone_f1=0.138 | 51s
+20:48:47 | INFO |   [finetune] epoch 8/20 | train_loss=0.6204 | val_loss=0.5638 | val_stone_acc=0.636 | val_stone_f1=0.200 | 51s
+20:49:38 | INFO |   [finetune] epoch 9/20 | train_loss=0.6034 | val_loss=0.5428 | val_stone_acc=0.652 | val_stone_f1=0.258 | 51s
+20:50:28 | INFO |   [finetune] epoch 10/20 | train_loss=0.6055 | val_loss=0.5374 | val_stone_acc=0.667 | val_stone_f1=0.353 | 51s
+20:51:19 | INFO |   [finetune] epoch 11/20 | train_loss=0.5992 | val_loss=0.5636 | val_stone_acc=0.652 | val_stone_f1=0.207 | 51s
+20:52:10 | INFO |   [finetune] epoch 12/20 | train_loss=0.5809 | val_loss=0.5865 | val_stone_acc=0.652 | val_stone_f1=0.207 | 51s
+20:53:00 | INFO |   [finetune] epoch 13/20 | train_loss=0.5584 | val_loss=0.5320 | val_stone_acc=0.758 | val_stone_f1=0.636 | 51s
+20:53:51 | INFO |   [finetune] epoch 14/20 | train_loss=0.5692 | val_loss=0.5435 | val_stone_acc=0.652 | val_stone_f1=0.258 | 51s
+20:54:41 | INFO |   [finetune] epoch 15/20 | train_loss=0.5663 | val_loss=0.5258 | val_stone_acc=0.788 | val_stone_f1=0.696 | 50s
+20:55:32 | INFO |   [finetune] epoch 16/20 | train_loss=0.5588 | val_loss=0.5251 | val_stone_acc=0.682 | val_stone_f1=0.364 | 51s
+20:56:23 | INFO |   [finetune] epoch 17/20 | train_loss=0.5284 | val_loss=0.5003 | val_stone_acc=0.697 | val_stone_f1=0.474 | 51s
+20:57:13 | INFO |   [finetune] epoch 18/20 | train_loss=0.5464 | val_loss=0.5128 | val_stone_acc=0.652 | val_stone_f1=0.303 | 50s
+20:58:04 | INFO |   [finetune] epoch 19/20 | train_loss=0.5209 | val_loss=0.4952 | val_stone_acc=0.712 | val_stone_f1=0.537 | 51s
+20:58:54 | INFO |   [finetune] epoch 20/20 | train_loss=0.5575 | val_loss=0.5147 | val_stone_acc=0.682 | val_stone_f1=0.323 | 51s
+20:58:54 | INFO | Fold 4 done. Best val_loss=0.4952 at epoch 23
+20:58:55 | INFO | Cross-fold summary:
+20:58:55 | INFO | === Held-out test set evaluation ===
+20:58:55 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+20:59:12 | INFO |   Fold 0 test: stone_acc=0.651 | stone_f1=0.383 | stone_roc_auc=0.671
+20:59:13 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+20:59:30 | INFO |   Fold 1 test: stone_acc=0.663 | stone_f1=0.364 | stone_roc_auc=0.689
+20:59:30 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+20:59:47 | INFO |   Fold 2 test: stone_acc=0.699 | stone_f1=0.419 | stone_roc_auc=0.724
+20:59:48 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:00:05 | INFO |   Fold 3 test: stone_acc=0.675 | stone_f1=0.372 | stone_roc_auc=0.651
+21:00:05 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:00:22 | INFO |   Fold 4 test: stone_acc=0.675 | stone_f1=0.491 | stone_roc_auc=0.718
+21:00:22 | INFO | Test set summary (mean ± std across folds):
+21:00:22 | INFO |   stone_accuracy: 0.672 ± 0.018
+21:00:22 | INFO |   stone_f1: 0.406 ± 0.052
+21:00:22 | INFO |   stone_roc_auc: 0.691 ± 0.031
+21:00:26 | INFO | Device: cuda
+21:00:26 | INFO | cuDNN benchmark enabled
+21:00:28 | INFO | Skipped 21 rows with no composition data
+21:00:28 | INFO | Recomputed labels at 100.0% threshold: 546 pure / 696 mixed (414 stones)
+21:00:28 | WARNING | Skipped 2 rows whose image files are missing
+21:00:28 | INFO | Built 1240 samples from 414 stones
+21:00:28 | INFO | Test holdout: 83 stones (36 pure / 47 mixed, 248 images). Train+val pool: 331 stones (992 images).
+21:00:28 | INFO | --random-labels: stone-level labels have been shuffled (baseline mode)
+21:00:28 | INFO |   Fold 0: train=264 stones (116 pure / 148 mixed, 791 images), val=67 stones (30 pure / 37 mixed, 201 images)
+21:00:28 | INFO |   Fold 1: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+21:00:28 | INFO |   Fold 2: train=265 stones (117 pure / 148 mixed, 795 images), val=66 stones (29 pure / 37 mixed, 197 images)
+21:00:28 | INFO |   Fold 3: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+21:00:28 | INFO |   Fold 4: train=265 stones (117 pure / 148 mixed, 794 images), val=66 stones (29 pure / 37 mixed, 198 images)
+21:00:28 | INFO | Config snapshot saved to /gpfs/home3/ddboer/umc_thesis/outputs/checkpoints/binary_random/config_snapshot.yaml
+21:00:28 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:00:29 | INFO | Fold 0 — Phase 1: frozen backbone, 5 epochs
+21:00:29 | INFO |   Trainable params: 1,026
+21:01:20 | INFO |   [frozen] epoch 1/5 | train_loss=0.8086 | val_loss=0.8026 | val_stone_acc=0.552 | val_stone_f1=0.712 | 51s
+21:02:10 | INFO |   [frozen] epoch 2/5 | train_loss=0.7736 | val_loss=0.6945 | val_stone_acc=0.552 | val_stone_f1=0.712 | 50s
+21:03:00 | INFO |   [frozen] epoch 3/5 | train_loss=0.7950 | val_loss=0.7167 | val_stone_acc=0.552 | val_stone_f1=0.712 | 50s
+21:03:51 | INFO |   [frozen] epoch 4/5 | train_loss=0.7614 | val_loss=0.7223 | val_stone_acc=0.552 | val_stone_f1=0.712 | 50s
+21:04:41 | INFO |   [frozen] epoch 5/5 | train_loss=0.7290 | val_loss=0.6902 | val_stone_acc=0.522 | val_stone_f1=0.652 | 50s
+21:04:41 | INFO |   Trainable params: 11,177,538
+21:05:32 | INFO |   [finetune] epoch 1/20 | train_loss=0.7305 | val_loss=0.7037 | val_stone_acc=0.582 | val_stone_f1=0.720 | 50s
+21:06:22 | INFO |   [finetune] epoch 2/20 | train_loss=0.7162 | val_loss=0.6987 | val_stone_acc=0.627 | val_stone_f1=0.747 | 50s
+21:07:12 | INFO |   [finetune] epoch 3/20 | train_loss=0.7150 | val_loss=0.7388 | val_stone_acc=0.567 | val_stone_f1=0.718 | 50s
+21:08:03 | INFO |   [finetune] epoch 4/20 | train_loss=0.7104 | val_loss=0.7054 | val_stone_acc=0.567 | val_stone_f1=0.633 | 50s
+21:08:53 | INFO |   [finetune] epoch 5/20 | train_loss=0.6954 | val_loss=0.7034 | val_stone_acc=0.567 | val_stone_f1=0.623 | 50s
+21:09:43 | INFO |   [finetune] epoch 6/20 | train_loss=0.7030 | val_loss=0.7340 | val_stone_acc=0.567 | val_stone_f1=0.707 | 51s
+21:10:34 | INFO |   [finetune] epoch 7/20 | train_loss=0.6843 | val_loss=0.7054 | val_stone_acc=0.552 | val_stone_f1=0.667 | 50s
+21:11:24 | INFO |   [finetune] epoch 8/20 | train_loss=0.6700 | val_loss=0.7128 | val_stone_acc=0.567 | val_stone_f1=0.642 | 50s
+21:12:14 | INFO |   [finetune] epoch 9/20 | train_loss=0.6645 | val_loss=0.7305 | val_stone_acc=0.478 | val_stone_f1=0.478 | 50s
+21:12:14 | INFO |   Early stopping (no improvement for 7 epochs)
+21:12:14 | INFO | Fold 0 done. Best val_loss=0.6987 at epoch 6
+21:12:15 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:12:15 | INFO | Fold 1 — Phase 1: frozen backbone, 5 epochs
+21:12:15 | INFO |   Trainable params: 1,026
+21:13:05 | INFO |   [frozen] epoch 1/5 | train_loss=0.8666 | val_loss=0.7206 | val_stone_acc=0.470 | val_stone_f1=0.578 | 51s
+21:13:56 | INFO |   [frozen] epoch 2/5 | train_loss=0.7883 | val_loss=0.7393 | val_stone_acc=0.515 | val_stone_f1=0.385 | 50s
+21:14:46 | INFO |   [frozen] epoch 3/5 | train_loss=0.7624 | val_loss=0.6777 | val_stone_acc=0.606 | val_stone_f1=0.683 | 50s
+21:15:36 | INFO |   [frozen] epoch 4/5 | train_loss=0.7702 | val_loss=0.6872 | val_stone_acc=0.545 | val_stone_f1=0.700 | 51s
+21:16:27 | INFO |   [frozen] epoch 5/5 | train_loss=0.7684 | val_loss=0.6919 | val_stone_acc=0.561 | val_stone_f1=0.491 | 51s
+21:16:27 | INFO |   Trainable params: 11,177,538
+21:17:18 | INFO |   [finetune] epoch 1/20 | train_loss=0.7826 | val_loss=0.6660 | val_stone_acc=0.576 | val_stone_f1=0.650 | 51s
+21:18:09 | INFO |   [finetune] epoch 2/20 | train_loss=0.7147 | val_loss=0.6664 | val_stone_acc=0.561 | val_stone_f1=0.623 | 51s
+21:19:00 | INFO |   [finetune] epoch 3/20 | train_loss=0.7395 | val_loss=0.6722 | val_stone_acc=0.591 | val_stone_f1=0.716 | 51s
+21:19:50 | INFO |   [finetune] epoch 4/20 | train_loss=0.7127 | val_loss=0.6970 | val_stone_acc=0.545 | val_stone_f1=0.516 | 51s
+21:20:41 | INFO |   [finetune] epoch 5/20 | train_loss=0.7085 | val_loss=0.7104 | val_stone_acc=0.545 | val_stone_f1=0.706 | 51s
+21:21:32 | INFO |   [finetune] epoch 6/20 | train_loss=0.7128 | val_loss=0.6995 | val_stone_acc=0.561 | val_stone_f1=0.707 | 50s
+21:22:22 | INFO |   [finetune] epoch 7/20 | train_loss=0.6939 | val_loss=0.7115 | val_stone_acc=0.515 | val_stone_f1=0.429 | 50s
+21:23:12 | INFO |   [finetune] epoch 8/20 | train_loss=0.6861 | val_loss=0.6787 | val_stone_acc=0.667 | val_stone_f1=0.744 | 50s
+21:23:12 | INFO |   Early stopping (no improvement for 7 epochs)
+21:23:12 | INFO | Fold 1 done. Best val_loss=0.6660 at epoch 5
+21:23:13 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:23:13 | INFO | Fold 2 — Phase 1: frozen backbone, 5 epochs
+21:23:13 | INFO |   Trainable params: 1,026
+21:24:03 | INFO |   [frozen] epoch 1/5 | train_loss=0.7978 | val_loss=0.7439 | val_stone_acc=0.485 | val_stone_f1=0.638 | 50s
+21:24:53 | INFO |   [frozen] epoch 2/5 | train_loss=0.7614 | val_loss=0.7851 | val_stone_acc=0.561 | val_stone_f1=0.718 | 50s
+21:25:43 | INFO |   [frozen] epoch 3/5 | train_loss=0.7476 | val_loss=0.7576 | val_stone_acc=0.515 | val_stone_f1=0.667 | 50s
+21:26:33 | INFO |   [frozen] epoch 4/5 | train_loss=0.7546 | val_loss=0.7367 | val_stone_acc=0.485 | val_stone_f1=0.605 | 50s
+21:27:23 | INFO |   [frozen] epoch 5/5 | train_loss=0.7232 | val_loss=0.7287 | val_stone_acc=0.515 | val_stone_f1=0.619 | 50s
+21:27:23 | INFO |   Trainable params: 11,177,538
+21:28:13 | INFO |   [finetune] epoch 1/20 | train_loss=0.7362 | val_loss=0.7490 | val_stone_acc=0.470 | val_stone_f1=0.639 | 50s
+21:29:03 | INFO |   [finetune] epoch 2/20 | train_loss=0.6943 | val_loss=0.7275 | val_stone_acc=0.530 | val_stone_f1=0.644 | 50s
+21:29:54 | INFO |   [finetune] epoch 3/20 | train_loss=0.7159 | val_loss=0.7803 | val_stone_acc=0.530 | val_stone_f1=0.693 | 50s
+21:30:44 | INFO |   [finetune] epoch 4/20 | train_loss=0.7136 | val_loss=0.7406 | val_stone_acc=0.515 | val_stone_f1=0.628 | 50s
+21:31:35 | INFO |   [finetune] epoch 5/20 | train_loss=0.7128 | val_loss=0.7420 | val_stone_acc=0.545 | val_stone_f1=0.559 | 51s
+21:32:25 | INFO |   [finetune] epoch 6/20 | train_loss=0.6957 | val_loss=0.7536 | val_stone_acc=0.530 | val_stone_f1=0.680 | 50s
+21:33:15 | INFO |   [finetune] epoch 7/20 | train_loss=0.6746 | val_loss=0.7200 | val_stone_acc=0.515 | val_stone_f1=0.628 | 50s
+21:34:06 | INFO |   [finetune] epoch 8/20 | train_loss=0.6709 | val_loss=0.7345 | val_stone_acc=0.621 | val_stone_f1=0.627 | 50s
+21:34:56 | INFO |   [finetune] epoch 9/20 | train_loss=0.6837 | val_loss=0.7378 | val_stone_acc=0.545 | val_stone_f1=0.634 | 50s
+21:35:46 | INFO |   [finetune] epoch 10/20 | train_loss=0.6713 | val_loss=0.7262 | val_stone_acc=0.530 | val_stone_f1=0.635 | 50s
+21:36:37 | INFO |   [finetune] epoch 11/20 | train_loss=0.6439 | val_loss=0.7313 | val_stone_acc=0.500 | val_stone_f1=0.637 | 50s
+21:37:27 | INFO |   [finetune] epoch 12/20 | train_loss=0.6462 | val_loss=0.7323 | val_stone_acc=0.500 | val_stone_f1=0.571 | 50s
+21:38:17 | INFO |   [finetune] epoch 13/20 | train_loss=0.6567 | val_loss=0.7305 | val_stone_acc=0.500 | val_stone_f1=0.560 | 50s
+21:39:07 | INFO |   [finetune] epoch 14/20 | train_loss=0.6673 | val_loss=0.7233 | val_stone_acc=0.530 | val_stone_f1=0.617 | 50s
+21:39:07 | INFO |   Early stopping (no improvement for 7 epochs)
+21:39:07 | INFO | Fold 2 done. Best val_loss=0.7200 at epoch 11
+21:39:08 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:39:08 | INFO | Fold 3 — Phase 1: frozen backbone, 5 epochs
+21:39:08 | INFO |   Trainable params: 1,026
+21:39:58 | INFO |   [frozen] epoch 1/5 | train_loss=0.8034 | val_loss=0.7251 | val_stone_acc=0.500 | val_stone_f1=0.571 | 51s
+21:40:49 | INFO |   [frozen] epoch 2/5 | train_loss=0.7907 | val_loss=0.7664 | val_stone_acc=0.561 | val_stone_f1=0.713 | 50s
+21:41:38 | INFO |   [frozen] epoch 3/5 | train_loss=0.7788 | val_loss=0.7382 | val_stone_acc=0.515 | val_stone_f1=0.610 | 50s
+21:42:28 | INFO |   [frozen] epoch 4/5 | train_loss=0.7429 | val_loss=0.7369 | val_stone_acc=0.530 | val_stone_f1=0.597 | 50s
+21:43:18 | INFO |   [frozen] epoch 5/5 | train_loss=0.7211 | val_loss=0.7331 | val_stone_acc=0.561 | val_stone_f1=0.681 | 50s
+21:43:18 | INFO |   Trainable params: 11,177,538
+21:44:07 | INFO |   [finetune] epoch 1/20 | train_loss=0.7314 | val_loss=0.7288 | val_stone_acc=0.561 | val_stone_f1=0.674 | 50s
+21:44:57 | INFO |   [finetune] epoch 2/20 | train_loss=0.7099 | val_loss=0.7475 | val_stone_acc=0.561 | val_stone_f1=0.718 | 50s
+21:45:47 | INFO |   [finetune] epoch 3/20 | train_loss=0.6991 | val_loss=0.7251 | val_stone_acc=0.591 | val_stone_f1=0.697 | 51s
+21:46:38 | INFO |   [finetune] epoch 4/20 | train_loss=0.6848 | val_loss=0.7217 | val_stone_acc=0.515 | val_stone_f1=0.568 | 50s
+21:47:29 | INFO |   [finetune] epoch 5/20 | train_loss=0.6928 | val_loss=0.7115 | val_stone_acc=0.606 | val_stone_f1=0.705 | 51s
+21:48:19 | INFO |   [finetune] epoch 6/20 | train_loss=0.6898 | val_loss=0.7364 | val_stone_acc=0.606 | val_stone_f1=0.729 | 50s
+21:49:09 | INFO |   [finetune] epoch 7/20 | train_loss=0.6674 | val_loss=0.7389 | val_stone_acc=0.591 | val_stone_f1=0.710 | 50s
+21:50:00 | INFO |   [finetune] epoch 8/20 | train_loss=0.6834 | val_loss=0.7472 | val_stone_acc=0.576 | val_stone_f1=0.696 | 51s
+21:50:50 | INFO |   [finetune] epoch 9/20 | train_loss=0.6636 | val_loss=0.7420 | val_stone_acc=0.515 | val_stone_f1=0.556 | 50s
+21:51:40 | INFO |   [finetune] epoch 10/20 | train_loss=0.6571 | val_loss=0.7354 | val_stone_acc=0.591 | val_stone_f1=0.710 | 50s
+21:52:31 | INFO |   [finetune] epoch 11/20 | train_loss=0.6653 | val_loss=0.7520 | val_stone_acc=0.530 | val_stone_f1=0.597 | 51s
+21:53:21 | INFO |   [finetune] epoch 12/20 | train_loss=0.6723 | val_loss=0.7785 | val_stone_acc=0.394 | val_stone_f1=0.375 | 51s
+21:53:21 | INFO |   Early stopping (no improvement for 7 epochs)
+21:53:21 | INFO | Fold 3 done. Best val_loss=0.7115 at epoch 9
+21:53:22 | INFO | Built resnet18 (11,177,538 params total). Pretrained weights: IMAGENET1K_V1
+21:53:22 | INFO | Fold 4 — Phase 1: frozen backbone, 5 epochs
+21:53:22 | INFO |   Trainable params: 1,026
+21:54:12 | INFO |   [frozen] epoch 1/5 | train_loss=0.7939 | val_loss=0.7912 | val_stone_acc=0.439 | val_stone_f1=0.098 | 50s
+21:55:01 | INFO |   [frozen] epoch 2/5 | train_loss=0.7919 | val_loss=0.7383 | val_stone_acc=0.394 | val_stone_f1=0.444 | 50s
+21:55:51 | INFO |   [frozen] epoch 3/5 | train_loss=0.7638 | val_loss=0.7453 | val_stone_acc=0.409 | val_stone_f1=0.451 | 49s
+21:56:40 | INFO |   [frozen] epoch 4/5 | train_loss=0.7232 | val_loss=0.7382 | val_stone_acc=0.379 | val_stone_f1=0.468 | 49s
+21:57:30 | INFO |   [frozen] epoch 5/5 | train_loss=0.7320 | val_loss=0.7346 | val_stone_acc=0.515 | val_stone_f1=0.660 | 50s
+21:57:30 | INFO |   Trainable params: 11,177,538
+21:58:19 | INFO |   [finetune] epoch 1/20 | train_loss=0.7285 | val_loss=0.7308 | val_stone_acc=0.561 | val_stone_f1=0.701 | 50s
+21:59:09 | INFO |   [finetune] epoch 2/20 | train_loss=0.6988 | val_loss=0.7350 | val_stone_acc=0.470 | val_stone_f1=0.588 | 50s
+21:59:59 | INFO |   [finetune] epoch 3/20 | train_loss=0.7066 | val_loss=0.7386 | val_stone_acc=0.500 | val_stone_f1=0.645 | 50s
+22:00:49 | INFO |   [finetune] epoch 4/20 | train_loss=0.7098 | val_loss=0.7429 | val_stone_acc=0.455 | val_stone_f1=0.419 | 50s
+22:01:39 | INFO |   [finetune] epoch 5/20 | train_loss=0.7130 | val_loss=0.7430 | val_stone_acc=0.500 | val_stone_f1=0.645 | 50s
+22:02:29 | INFO |   [finetune] epoch 6/20 | train_loss=0.6840 | val_loss=0.7267 | val_stone_acc=0.485 | val_stone_f1=0.630 | 50s
+22:03:19 | INFO |   [finetune] epoch 7/20 | train_loss=0.6964 | val_loss=0.7213 | val_stone_acc=0.500 | val_stone_f1=0.602 | 50s
+22:04:10 | INFO |   [finetune] epoch 8/20 | train_loss=0.6714 | val_loss=0.7385 | val_stone_acc=0.545 | val_stone_f1=0.516 | 50s
+22:05:00 | INFO |   [finetune] epoch 9/20 | train_loss=0.6682 | val_loss=0.7226 | val_stone_acc=0.561 | val_stone_f1=0.695 | 50s
+22:05:50 | INFO |   [finetune] epoch 10/20 | train_loss=0.6693 | val_loss=0.7282 | val_stone_acc=0.515 | val_stone_f1=0.644 | 50s
+22:06:40 | INFO |   [finetune] epoch 11/20 | train_loss=0.6825 | val_loss=0.7256 | val_stone_acc=0.530 | val_stone_f1=0.652 | 50s
+22:07:30 | INFO |   [finetune] epoch 12/20 | train_loss=0.6639 | val_loss=0.7214 | val_stone_acc=0.545 | val_stone_f1=0.667 | 50s
+22:08:19 | INFO |   [finetune] epoch 13/20 | train_loss=0.6757 | val_loss=0.7313 | val_stone_acc=0.530 | val_stone_f1=0.659 | 50s
+[2026-06-02T22:08:51.032] error: *** JOB 23383469 ON gcn26 CANCELLED AT 2026-06-02T22:08:51 DUE TO TIME LIMIT ***

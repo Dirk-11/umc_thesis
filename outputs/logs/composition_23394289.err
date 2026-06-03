@@ -1,0 +1,368 @@
+21:37:12 | INFO | Device: cuda
+21:37:12 | INFO | cuDNN benchmark enabled
+21:37:14 | INFO | Skipped 21 rows with no composition data
+21:37:14 | WARNING | Skipped 2 rows whose image files are missing
+21:37:15 | INFO | Built 1240 compositional samples from 414 stones
+21:37:15 | INFO | Excluded classes ['OTH'] → 5 classes remaining, 410 stones
+21:37:15 | INFO | Test holdout: 82 stones (40 pure / 42 mixed, 246 images). Train+val pool: 328 stones (982 images).
+21:37:15 | INFO |   Fold 0: train=262 stones (129 pure / 133 mixed, 785 images), val=66 stones (32 pure / 34 mixed, 197 images)
+21:37:15 | INFO |   Fold 1: train=262 stones (128 pure / 134 mixed, 784 images), val=66 stones (33 pure / 33 mixed, 198 images)
+21:37:15 | INFO |   Fold 2: train=262 stones (129 pure / 133 mixed, 785 images), val=66 stones (32 pure / 34 mixed, 197 images)
+21:37:15 | INFO |   Fold 3: train=263 stones (129 pure / 134 mixed, 787 images), val=65 stones (32 pure / 33 mixed, 195 images)
+21:37:15 | INFO |   Fold 4: train=263 stones (129 pure / 134 mixed, 787 images), val=65 stones (32 pure / 33 mixed, 195 images)
+21:37:15 | INFO | Model type: simple  |  checkpoints → /gpfs/home3/ddboer/umc_thesis/outputs/checkpoints/composition
+21:37:15 | INFO | use_weighted_kl=false — using standard (unweighted) KL divergence
+21:37:15 | INFO | === Fold 0 ===
+21:37:15 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+21:37:15 | INFO | Fold 0 — Phase 1: frozen backbone, 5 epochs
+21:37:15 | INFO |   Trainable params: 132,618
+21:38:06 | INFO |   [frozen] epoch 1/5 | train_total=1.2464 (comp=1.0841 aux=0.5411) | val_loss=1.0369 | val_stone_mae=0.2308 | val_stone_dom_acc=0.500 | 51s
+21:38:57 | INFO |   [frozen] epoch 2/5 | train_total=1.1255 (comp=0.9808 aux=0.4823) | val_loss=0.9864 | val_stone_mae=0.2211 | val_stone_dom_acc=0.561 | 50s
+21:39:47 | INFO |   [frozen] epoch 3/5 | train_total=1.1012 (comp=0.9622 aux=0.4633) | val_loss=0.9473 | val_stone_mae=0.2183 | val_stone_dom_acc=0.606 | 50s
+21:40:37 | INFO |   [frozen] epoch 4/5 | train_total=1.0591 (comp=0.9252 aux=0.4466) | val_loss=0.9320 | val_stone_mae=0.2029 | val_stone_dom_acc=0.591 | 50s
+21:41:28 | INFO |   [frozen] epoch 5/5 | train_total=1.0403 (comp=0.9061 aux=0.4473) | val_loss=0.9140 | val_stone_mae=0.2011 | val_stone_dom_acc=0.606 | 50s
+21:41:28 | INFO | Fold 0 — Phase 2: fine-tune, 25 epochs
+21:41:28 | INFO |   Trainable params: 11,309,130
+21:42:18 | INFO |   [finetune] epoch 1/25 | train_total=1.0271 (comp=0.8940 aux=0.4438) | val_loss=0.8746 | val_stone_mae=0.1962 | val_stone_dom_acc=0.621 | 51s
+21:43:09 | INFO |   [finetune] epoch 2/25 | train_total=1.0117 (comp=0.8820 aux=0.4326) | val_loss=0.8483 | val_stone_mae=0.1971 | val_stone_dom_acc=0.591 | 50s
+21:43:59 | INFO |   [finetune] epoch 3/25 | train_total=0.9470 (comp=0.8212 aux=0.4195) | val_loss=0.8410 | val_stone_mae=0.1781 | val_stone_dom_acc=0.636 | 50s
+21:44:49 | INFO |   [finetune] epoch 4/25 | train_total=0.8967 (comp=0.7765 aux=0.4005) | val_loss=0.8861 | val_stone_mae=0.1743 | val_stone_dom_acc=0.606 | 50s
+21:45:40 | INFO |   [finetune] epoch 5/25 | train_total=0.8824 (comp=0.7648 aux=0.3921) | val_loss=0.8085 | val_stone_mae=0.1797 | val_stone_dom_acc=0.697 | 50s
+21:46:30 | INFO |   [finetune] epoch 6/25 | train_total=0.8626 (comp=0.7440 aux=0.3955) | val_loss=0.8263 | val_stone_mae=0.1725 | val_stone_dom_acc=0.636 | 50s
+21:47:20 | INFO |   [finetune] epoch 7/25 | train_total=0.8771 (comp=0.7597 aux=0.3915) | val_loss=0.7892 | val_stone_mae=0.1724 | val_stone_dom_acc=0.697 | 50s
+21:48:11 | INFO |   [finetune] epoch 8/25 | train_total=0.8519 (comp=0.7369 aux=0.3833) | val_loss=0.8984 | val_stone_mae=0.1731 | val_stone_dom_acc=0.576 | 50s
+21:49:01 | INFO |   [finetune] epoch 9/25 | train_total=0.8385 (comp=0.7262 aux=0.3744) | val_loss=0.7984 | val_stone_mae=0.1698 | val_stone_dom_acc=0.652 | 50s
+21:49:51 | INFO |   [finetune] epoch 10/25 | train_total=0.8040 (comp=0.6943 aux=0.3660) | val_loss=0.7936 | val_stone_mae=0.1677 | val_stone_dom_acc=0.667 | 50s
+21:50:41 | INFO |   [finetune] epoch 11/25 | train_total=0.7802 (comp=0.6716 aux=0.3622) | val_loss=0.7769 | val_stone_mae=0.1653 | val_stone_dom_acc=0.652 | 50s
+21:51:31 | INFO |   [finetune] epoch 12/25 | train_total=0.7373 (comp=0.6309 aux=0.3549) | val_loss=0.7719 | val_stone_mae=0.1613 | val_stone_dom_acc=0.652 | 50s
+21:52:21 | INFO |   [finetune] epoch 13/25 | train_total=0.7404 (comp=0.6322 aux=0.3605) | val_loss=0.7584 | val_stone_mae=0.1632 | val_stone_dom_acc=0.652 | 50s
+21:53:11 | INFO |   [finetune] epoch 14/25 | train_total=0.7436 (comp=0.6397 aux=0.3464) | val_loss=0.7448 | val_stone_mae=0.1609 | val_stone_dom_acc=0.652 | 50s
+21:54:01 | INFO |   [finetune] epoch 15/25 | train_total=0.7146 (comp=0.6109 aux=0.3454) | val_loss=0.7817 | val_stone_mae=0.1570 | val_stone_dom_acc=0.652 | 50s
+21:54:51 | INFO |   [finetune] epoch 16/25 | train_total=0.7133 (comp=0.6081 aux=0.3506) | val_loss=0.7167 | val_stone_mae=0.1578 | val_stone_dom_acc=0.652 | 50s
+21:55:41 | INFO |   [finetune] epoch 17/25 | train_total=0.7115 (comp=0.6108 aux=0.3356) | val_loss=0.7509 | val_stone_mae=0.1546 | val_stone_dom_acc=0.682 | 50s
+21:56:31 | INFO |   [finetune] epoch 18/25 | train_total=0.7012 (comp=0.5979 aux=0.3444) | val_loss=0.7481 | val_stone_mae=0.1543 | val_stone_dom_acc=0.697 | 50s
+21:57:21 | INFO |   [finetune] epoch 19/25 | train_total=0.6626 (comp=0.5638 aux=0.3295) | val_loss=0.7375 | val_stone_mae=0.1515 | val_stone_dom_acc=0.697 | 50s
+21:58:11 | INFO |   [finetune] epoch 20/25 | train_total=0.6578 (comp=0.5594 aux=0.3277) | val_loss=0.6943 | val_stone_mae=0.1471 | val_stone_dom_acc=0.682 | 50s
+21:59:01 | INFO |   [finetune] epoch 21/25 | train_total=0.6495 (comp=0.5521 aux=0.3247) | val_loss=0.6973 | val_stone_mae=0.1476 | val_stone_dom_acc=0.712 | 50s
+21:59:51 | INFO |   [finetune] epoch 22/25 | train_total=0.6566 (comp=0.5574 aux=0.3306) | val_loss=0.7057 | val_stone_mae=0.1454 | val_stone_dom_acc=0.652 | 50s
+22:00:41 | INFO |   [finetune] epoch 23/25 | train_total=0.6459 (comp=0.5510 aux=0.3164) | val_loss=0.6936 | val_stone_mae=0.1425 | val_stone_dom_acc=0.682 | 50s
+22:01:31 | INFO |   [finetune] epoch 24/25 | train_total=0.6025 (comp=0.5084 aux=0.3135) | val_loss=0.6971 | val_stone_mae=0.1420 | val_stone_dom_acc=0.667 | 50s
+22:02:22 | INFO |   [finetune] epoch 25/25 | train_total=0.5782 (comp=0.4872 aux=0.3032) | val_loss=0.6773 | val_stone_mae=0.1470 | val_stone_dom_acc=0.652 | 51s
+22:02:22 | INFO | Fold 0 done. best_val_loss=0.6773 | stone_mae=0.1470 | stone_dom_acc=0.652 | stone_aitchison=10.9189
+22:02:22 | INFO | === Fold 1 ===
+22:02:22 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+22:02:22 | INFO | Fold 1 — Phase 1: frozen backbone, 5 epochs
+22:02:22 | INFO |   Trainable params: 132,618
+22:03:13 | INFO |   [frozen] epoch 1/5 | train_total=1.2716 (comp=1.1076 aux=0.5468) | val_loss=1.0579 | val_stone_mae=0.2334 | val_stone_dom_acc=0.500 | 50s
+22:04:03 | INFO |   [frozen] epoch 2/5 | train_total=1.1618 (comp=1.0104 aux=0.5045) | val_loss=0.9741 | val_stone_mae=0.2203 | val_stone_dom_acc=0.515 | 50s
+22:04:53 | INFO |   [frozen] epoch 3/5 | train_total=1.0926 (comp=0.9487 aux=0.4795) | val_loss=0.9317 | val_stone_mae=0.2025 | val_stone_dom_acc=0.545 | 50s
+22:05:42 | INFO |   [frozen] epoch 4/5 | train_total=1.0657 (comp=0.9256 aux=0.4669) | val_loss=0.9620 | val_stone_mae=0.1970 | val_stone_dom_acc=0.500 | 50s
+22:06:32 | INFO |   [frozen] epoch 5/5 | train_total=1.0414 (comp=0.9048 aux=0.4552) | val_loss=0.9623 | val_stone_mae=0.1902 | val_stone_dom_acc=0.515 | 50s
+22:06:32 | INFO | Fold 1 — Phase 2: fine-tune, 25 epochs
+22:06:32 | INFO |   Trainable params: 11,309,130
+22:07:22 | INFO |   [finetune] epoch 1/25 | train_total=1.0308 (comp=0.8967 aux=0.4469) | val_loss=0.8851 | val_stone_mae=0.1893 | val_stone_dom_acc=0.561 | 50s
+22:08:12 | INFO |   [finetune] epoch 2/25 | train_total=0.9949 (comp=0.8637 aux=0.4374) | val_loss=0.8739 | val_stone_mae=0.1804 | val_stone_dom_acc=0.561 | 50s
+22:09:01 | INFO |   [finetune] epoch 3/25 | train_total=0.9499 (comp=0.8213 aux=0.4287) | val_loss=0.8445 | val_stone_mae=0.1763 | val_stone_dom_acc=0.576 | 50s
+22:09:51 | INFO |   [finetune] epoch 4/25 | train_total=0.9239 (comp=0.7990 aux=0.4163) | val_loss=0.7961 | val_stone_mae=0.1781 | val_stone_dom_acc=0.561 | 50s
+22:10:41 | INFO |   [finetune] epoch 5/25 | train_total=0.8869 (comp=0.7656 aux=0.4045) | val_loss=0.8323 | val_stone_mae=0.1754 | val_stone_dom_acc=0.561 | 50s
+22:11:31 | INFO |   [finetune] epoch 6/25 | train_total=0.8821 (comp=0.7616 aux=0.4015) | val_loss=0.9800 | val_stone_mae=0.1718 | val_stone_dom_acc=0.530 | 50s
+22:12:20 | INFO |   [finetune] epoch 7/25 | train_total=0.8732 (comp=0.7496 aux=0.4119) | val_loss=0.7940 | val_stone_mae=0.1722 | val_stone_dom_acc=0.621 | 50s
+22:13:10 | INFO |   [finetune] epoch 8/25 | train_total=0.8386 (comp=0.7223 aux=0.3877) | val_loss=0.8276 | val_stone_mae=0.1679 | val_stone_dom_acc=0.576 | 50s
+22:14:00 | INFO |   [finetune] epoch 9/25 | train_total=0.8144 (comp=0.7006 aux=0.3793) | val_loss=0.8551 | val_stone_mae=0.1678 | val_stone_dom_acc=0.606 | 50s
+22:14:50 | INFO |   [finetune] epoch 10/25 | train_total=0.7851 (comp=0.6745 aux=0.3686) | val_loss=0.8758 | val_stone_mae=0.1653 | val_stone_dom_acc=0.606 | 50s
+22:15:40 | INFO |   [finetune] epoch 11/25 | train_total=0.7453 (comp=0.6354 aux=0.3663) | val_loss=0.8022 | val_stone_mae=0.1663 | val_stone_dom_acc=0.606 | 49s
+22:16:29 | INFO |   [finetune] epoch 12/25 | train_total=0.7471 (comp=0.6386 aux=0.3618) | val_loss=0.8810 | val_stone_mae=0.1645 | val_stone_dom_acc=0.591 | 50s
+22:17:19 | INFO |   [finetune] epoch 13/25 | train_total=0.7245 (comp=0.6186 aux=0.3533) | val_loss=0.7799 | val_stone_mae=0.1595 | val_stone_dom_acc=0.652 | 50s
+22:18:09 | INFO |   [finetune] epoch 14/25 | train_total=0.7108 (comp=0.6067 aux=0.3468) | val_loss=0.7829 | val_stone_mae=0.1584 | val_stone_dom_acc=0.606 | 50s
+22:18:58 | INFO |   [finetune] epoch 15/25 | train_total=0.7227 (comp=0.6187 aux=0.3467) | val_loss=0.8681 | val_stone_mae=0.1633 | val_stone_dom_acc=0.606 | 50s
+22:19:48 | INFO |   [finetune] epoch 16/25 | train_total=0.6991 (comp=0.5950 aux=0.3471) | val_loss=0.8266 | val_stone_mae=0.1551 | val_stone_dom_acc=0.652 | 50s
+22:20:38 | INFO |   [finetune] epoch 17/25 | train_total=0.6874 (comp=0.5869 aux=0.3352) | val_loss=0.8659 | val_stone_mae=0.1598 | val_stone_dom_acc=0.606 | 50s
+22:21:27 | INFO |   [finetune] epoch 18/25 | train_total=0.6477 (comp=0.5510 aux=0.3224) | val_loss=0.8636 | val_stone_mae=0.1579 | val_stone_dom_acc=0.591 | 50s
+22:22:17 | INFO |   [finetune] epoch 19/25 | train_total=0.6627 (comp=0.5667 aux=0.3202) | val_loss=0.8183 | val_stone_mae=0.1551 | val_stone_dom_acc=0.636 | 49s
+22:23:06 | INFO |   [finetune] epoch 20/25 | train_total=0.6578 (comp=0.5585 aux=0.3308) | val_loss=0.7754 | val_stone_mae=0.1484 | val_stone_dom_acc=0.712 | 50s
+22:23:56 | INFO |   [finetune] epoch 21/25 | train_total=0.6511 (comp=0.5516 aux=0.3317) | val_loss=0.7935 | val_stone_mae=0.1534 | val_stone_dom_acc=0.652 | 50s
+22:24:46 | INFO |   [finetune] epoch 22/25 | train_total=0.6429 (comp=0.5469 aux=0.3199) | val_loss=0.7641 | val_stone_mae=0.1499 | val_stone_dom_acc=0.652 | 50s
+22:25:35 | INFO |   [finetune] epoch 23/25 | train_total=0.6081 (comp=0.5148 aux=0.3110) | val_loss=0.7851 | val_stone_mae=0.1451 | val_stone_dom_acc=0.697 | 49s
+22:26:25 | INFO |   [finetune] epoch 24/25 | train_total=0.6473 (comp=0.5520 aux=0.3178) | val_loss=0.8727 | val_stone_mae=0.1549 | val_stone_dom_acc=0.636 | 49s
+22:27:14 | INFO |   [finetune] epoch 25/25 | train_total=0.6092 (comp=0.5164 aux=0.3093) | val_loss=0.7896 | val_stone_mae=0.1436 | val_stone_dom_acc=0.697 | 50s
+22:27:14 | INFO | Fold 1 done. best_val_loss=0.7641 | stone_mae=0.1499 | stone_dom_acc=0.652 | stone_aitchison=10.7278
+22:27:14 | INFO | === Fold 2 ===
+22:27:15 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+22:27:15 | INFO | Fold 2 — Phase 1: frozen backbone, 5 epochs
+22:27:15 | INFO |   Trainable params: 132,618
+22:28:05 | INFO |   [frozen] epoch 1/5 | train_total=1.2847 (comp=1.1214 aux=0.5443) | val_loss=1.0718 | val_stone_mae=0.2435 | val_stone_dom_acc=0.485 | 51s
+22:28:56 | INFO |   [frozen] epoch 2/5 | train_total=1.1281 (comp=0.9794 aux=0.4956) | val_loss=1.0074 | val_stone_mae=0.2217 | val_stone_dom_acc=0.500 | 50s
+22:29:46 | INFO |   [frozen] epoch 3/5 | train_total=1.0734 (comp=0.9299 aux=0.4782) | val_loss=0.9684 | val_stone_mae=0.2265 | val_stone_dom_acc=0.576 | 50s
+22:30:36 | INFO |   [frozen] epoch 4/5 | train_total=1.1090 (comp=0.9647 aux=0.4809) | val_loss=0.9465 | val_stone_mae=0.2122 | val_stone_dom_acc=0.545 | 50s
+22:31:27 | INFO |   [frozen] epoch 5/5 | train_total=1.0470 (comp=0.9103 aux=0.4558) | val_loss=0.9330 | val_stone_mae=0.2141 | val_stone_dom_acc=0.515 | 50s
+22:31:27 | INFO | Fold 2 — Phase 2: fine-tune, 25 epochs
+22:31:27 | INFO |   Trainable params: 11,309,130
+22:32:17 | INFO |   [finetune] epoch 1/25 | train_total=1.0638 (comp=0.9266 aux=0.4572) | val_loss=0.9314 | val_stone_mae=0.2011 | val_stone_dom_acc=0.545 | 50s
+22:33:08 | INFO |   [finetune] epoch 2/25 | train_total=1.0353 (comp=0.9027 aux=0.4420) | val_loss=0.8550 | val_stone_mae=0.1987 | val_stone_dom_acc=0.591 | 51s
+22:33:59 | INFO |   [finetune] epoch 3/25 | train_total=0.9661 (comp=0.8386 aux=0.4247) | val_loss=0.8690 | val_stone_mae=0.1868 | val_stone_dom_acc=0.561 | 51s
+22:34:49 | INFO |   [finetune] epoch 4/25 | train_total=0.9236 (comp=0.7968 aux=0.4226) | val_loss=0.8176 | val_stone_mae=0.1879 | val_stone_dom_acc=0.606 | 51s
+22:35:40 | INFO |   [finetune] epoch 5/25 | train_total=0.9003 (comp=0.7779 aux=0.4079) | val_loss=0.7921 | val_stone_mae=0.1783 | val_stone_dom_acc=0.652 | 51s
+22:36:31 | INFO |   [finetune] epoch 6/25 | train_total=0.8894 (comp=0.7695 aux=0.3998) | val_loss=0.8906 | val_stone_mae=0.1742 | val_stone_dom_acc=0.561 | 51s
+22:37:22 | INFO |   [finetune] epoch 7/25 | train_total=0.8730 (comp=0.7536 aux=0.3979) | val_loss=0.7903 | val_stone_mae=0.1942 | val_stone_dom_acc=0.636 | 51s
+22:38:13 | INFO |   [finetune] epoch 8/25 | train_total=0.8668 (comp=0.7496 aux=0.3906) | val_loss=0.7900 | val_stone_mae=0.1721 | val_stone_dom_acc=0.636 | 51s
+22:39:03 | INFO |   [finetune] epoch 9/25 | train_total=0.8236 (comp=0.7088 aux=0.3826) | val_loss=0.7903 | val_stone_mae=0.1748 | val_stone_dom_acc=0.576 | 51s
+22:39:54 | INFO |   [finetune] epoch 10/25 | train_total=0.8260 (comp=0.7135 aux=0.3749) | val_loss=0.7975 | val_stone_mae=0.1668 | val_stone_dom_acc=0.667 | 51s
+22:40:45 | INFO |   [finetune] epoch 11/25 | train_total=0.7886 (comp=0.6768 aux=0.3726) | val_loss=0.7510 | val_stone_mae=0.1709 | val_stone_dom_acc=0.667 | 51s
+22:41:36 | INFO |   [finetune] epoch 12/25 | train_total=0.8192 (comp=0.7095 aux=0.3658) | val_loss=0.7317 | val_stone_mae=0.1685 | val_stone_dom_acc=0.697 | 51s
+22:42:26 | INFO |   [finetune] epoch 13/25 | train_total=0.7944 (comp=0.6852 aux=0.3641) | val_loss=0.7706 | val_stone_mae=0.1578 | val_stone_dom_acc=0.667 | 51s
+22:43:17 | INFO |   [finetune] epoch 14/25 | train_total=0.7885 (comp=0.6778 aux=0.3687) | val_loss=0.7672 | val_stone_mae=0.1610 | val_stone_dom_acc=0.682 | 50s
+22:44:07 | INFO |   [finetune] epoch 15/25 | train_total=0.7718 (comp=0.6628 aux=0.3632) | val_loss=0.7261 | val_stone_mae=0.1569 | val_stone_dom_acc=0.712 | 50s
+22:44:58 | INFO |   [finetune] epoch 16/25 | train_total=0.7494 (comp=0.6443 aux=0.3503) | val_loss=0.7112 | val_stone_mae=0.1533 | val_stone_dom_acc=0.742 | 50s
+22:45:48 | INFO |   [finetune] epoch 17/25 | train_total=0.7313 (comp=0.6273 aux=0.3465) | val_loss=0.7144 | val_stone_mae=0.1527 | val_stone_dom_acc=0.727 | 50s
+22:46:38 | INFO |   [finetune] epoch 18/25 | train_total=0.7236 (comp=0.6204 aux=0.3440) | val_loss=0.7009 | val_stone_mae=0.1526 | val_stone_dom_acc=0.727 | 50s
+22:47:29 | INFO |   [finetune] epoch 19/25 | train_total=0.7147 (comp=0.6119 aux=0.3426) | val_loss=0.6945 | val_stone_mae=0.1510 | val_stone_dom_acc=0.742 | 50s
+22:48:20 | INFO |   [finetune] epoch 20/25 | train_total=0.6744 (comp=0.5769 aux=0.3252) | val_loss=0.6871 | val_stone_mae=0.1519 | val_stone_dom_acc=0.742 | 51s
+22:49:10 | INFO |   [finetune] epoch 21/25 | train_total=0.6895 (comp=0.5904 aux=0.3304) | val_loss=0.7729 | val_stone_mae=0.1474 | val_stone_dom_acc=0.727 | 50s
+22:50:01 | INFO |   [finetune] epoch 22/25 | train_total=0.7158 (comp=0.6148 aux=0.3368) | val_loss=0.6787 | val_stone_mae=0.1534 | val_stone_dom_acc=0.758 | 50s
+22:50:51 | INFO |   [finetune] epoch 23/25 | train_total=0.7024 (comp=0.5994 aux=0.3435) | val_loss=0.7276 | val_stone_mae=0.1478 | val_stone_dom_acc=0.712 | 50s
+22:51:41 | INFO |   [finetune] epoch 24/25 | train_total=0.6534 (comp=0.5564 aux=0.3233) | val_loss=0.7161 | val_stone_mae=0.1430 | val_stone_dom_acc=0.742 | 50s
+22:52:31 | INFO |   [finetune] epoch 25/25 | train_total=0.6537 (comp=0.5572 aux=0.3215) | val_loss=0.6690 | val_stone_mae=0.1439 | val_stone_dom_acc=0.758 | 50s
+22:52:31 | INFO | Fold 2 done. best_val_loss=0.6690 | stone_mae=0.1439 | stone_dom_acc=0.758 | stone_aitchison=10.6550
+22:52:32 | INFO | === Fold 3 ===
+22:52:32 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+22:52:32 | INFO | Fold 3 — Phase 1: frozen backbone, 5 epochs
+22:52:32 | INFO |   Trainable params: 132,618
+22:53:22 | INFO |   [frozen] epoch 1/5 | train_total=1.2679 (comp=1.1043 aux=0.5453) | val_loss=0.9626 | val_stone_mae=0.2202 | val_stone_dom_acc=0.508 | 50s
+22:54:12 | INFO |   [frozen] epoch 2/5 | train_total=1.1395 (comp=0.9923 aux=0.4909) | val_loss=0.9017 | val_stone_mae=0.2069 | val_stone_dom_acc=0.615 | 50s
+22:55:02 | INFO |   [frozen] epoch 3/5 | train_total=1.0947 (comp=0.9526 aux=0.4737) | val_loss=0.9179 | val_stone_mae=0.1856 | val_stone_dom_acc=0.569 | 50s
+22:55:52 | INFO |   [frozen] epoch 4/5 | train_total=1.0492 (comp=0.9118 aux=0.4579) | val_loss=0.8734 | val_stone_mae=0.1847 | val_stone_dom_acc=0.631 | 50s
+22:56:42 | INFO |   [frozen] epoch 5/5 | train_total=1.0407 (comp=0.9046 aux=0.4536) | val_loss=0.8865 | val_stone_mae=0.1998 | val_stone_dom_acc=0.615 | 50s
+22:56:42 | INFO | Fold 3 — Phase 2: fine-tune, 25 epochs
+22:56:42 | INFO |   Trainable params: 11,309,130
+22:57:33 | INFO |   [finetune] epoch 1/25 | train_total=1.0315 (comp=0.8978 aux=0.4455) | val_loss=0.8931 | val_stone_mae=0.1776 | val_stone_dom_acc=0.631 | 50s
+22:58:23 | INFO |   [finetune] epoch 2/25 | train_total=0.9826 (comp=0.8540 aux=0.4286) | val_loss=0.8794 | val_stone_mae=0.1743 | val_stone_dom_acc=0.538 | 50s
+22:59:13 | INFO |   [finetune] epoch 3/25 | train_total=0.9754 (comp=0.8496 aux=0.4194) | val_loss=0.8015 | val_stone_mae=0.1723 | val_stone_dom_acc=0.662 | 50s
+23:00:04 | INFO |   [finetune] epoch 4/25 | train_total=0.9189 (comp=0.7973 aux=0.4054) | val_loss=0.7754 | val_stone_mae=0.1710 | val_stone_dom_acc=0.692 | 50s
+23:00:54 | INFO |   [finetune] epoch 5/25 | train_total=0.9052 (comp=0.7839 aux=0.4043) | val_loss=0.8121 | val_stone_mae=0.1653 | val_stone_dom_acc=0.677 | 50s
+23:01:44 | INFO |   [finetune] epoch 6/25 | train_total=0.8888 (comp=0.7693 aux=0.3981) | val_loss=0.7830 | val_stone_mae=0.1641 | val_stone_dom_acc=0.692 | 50s
+23:02:34 | INFO |   [finetune] epoch 7/25 | train_total=0.8599 (comp=0.7438 aux=0.3873) | val_loss=0.7845 | val_stone_mae=0.1646 | val_stone_dom_acc=0.692 | 50s
+23:03:24 | INFO |   [finetune] epoch 8/25 | train_total=0.8440 (comp=0.7288 aux=0.3841) | val_loss=0.8053 | val_stone_mae=0.1569 | val_stone_dom_acc=0.662 | 50s
+23:04:14 | INFO |   [finetune] epoch 9/25 | train_total=0.8037 (comp=0.6912 aux=0.3749) | val_loss=0.8168 | val_stone_mae=0.1543 | val_stone_dom_acc=0.723 | 50s
+23:05:04 | INFO |   [finetune] epoch 10/25 | train_total=0.8082 (comp=0.6987 aux=0.3650) | val_loss=0.7239 | val_stone_mae=0.1555 | val_stone_dom_acc=0.723 | 50s
+23:05:54 | INFO |   [finetune] epoch 11/25 | train_total=0.7637 (comp=0.6562 aux=0.3585) | val_loss=0.7067 | val_stone_mae=0.1589 | val_stone_dom_acc=0.738 | 50s
+23:06:44 | INFO |   [finetune] epoch 12/25 | train_total=0.7328 (comp=0.6291 aux=0.3456) | val_loss=0.7612 | val_stone_mae=0.1499 | val_stone_dom_acc=0.662 | 50s
+23:07:34 | INFO |   [finetune] epoch 13/25 | train_total=0.7517 (comp=0.6460 aux=0.3523) | val_loss=0.7018 | val_stone_mae=0.1548 | val_stone_dom_acc=0.708 | 50s
+23:08:24 | INFO |   [finetune] epoch 14/25 | train_total=0.7714 (comp=0.6677 aux=0.3456) | val_loss=0.7461 | val_stone_mae=0.1516 | val_stone_dom_acc=0.723 | 50s
+23:09:14 | INFO |   [finetune] epoch 15/25 | train_total=0.7344 (comp=0.6299 aux=0.3483) | val_loss=0.7694 | val_stone_mae=0.1524 | val_stone_dom_acc=0.646 | 50s
+23:10:04 | INFO |   [finetune] epoch 16/25 | train_total=0.7087 (comp=0.6055 aux=0.3439) | val_loss=0.7389 | val_stone_mae=0.1575 | val_stone_dom_acc=0.677 | 50s
+23:10:54 | INFO |   [finetune] epoch 17/25 | train_total=0.6980 (comp=0.5980 aux=0.3335) | val_loss=0.7589 | val_stone_mae=0.1444 | val_stone_dom_acc=0.692 | 50s
+23:11:44 | INFO |   [finetune] epoch 18/25 | train_total=0.6660 (comp=0.5691 aux=0.3230) | val_loss=0.7075 | val_stone_mae=0.1543 | val_stone_dom_acc=0.708 | 50s
+23:12:34 | INFO |   [finetune] epoch 19/25 | train_total=0.6716 (comp=0.5725 aux=0.3301) | val_loss=0.7534 | val_stone_mae=0.1500 | val_stone_dom_acc=0.738 | 50s
+23:13:24 | INFO |   [finetune] epoch 20/25 | train_total=0.6746 (comp=0.5763 aux=0.3277) | val_loss=0.7479 | val_stone_mae=0.1445 | val_stone_dom_acc=0.708 | 50s
+23:13:24 | INFO |   Early stopping (no improvement for 7 epochs)
+23:13:24 | INFO | Fold 3 done. best_val_loss=0.7018 | stone_mae=0.1548 | stone_dom_acc=0.708 | stone_aitchison=11.3747
+23:13:24 | INFO | === Fold 4 ===
+23:13:24 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:13:24 | INFO | Fold 4 — Phase 1: frozen backbone, 5 epochs
+23:13:24 | INFO |   Trainable params: 132,618
+23:14:15 | INFO |   [frozen] epoch 1/5 | train_total=1.3033 (comp=1.1433 aux=0.5334) | val_loss=1.0389 | val_stone_mae=0.2432 | val_stone_dom_acc=0.446 | 50s
+23:15:05 | INFO |   [frozen] epoch 2/5 | train_total=1.1571 (comp=1.0127 aux=0.4814) | val_loss=0.9164 | val_stone_mae=0.2122 | val_stone_dom_acc=0.585 | 50s
+23:15:55 | INFO |   [frozen] epoch 3/5 | train_total=1.1295 (comp=0.9900 aux=0.4650) | val_loss=0.8985 | val_stone_mae=0.2052 | val_stone_dom_acc=0.554 | 50s
+23:16:45 | INFO |   [frozen] epoch 4/5 | train_total=1.0668 (comp=0.9316 aux=0.4509) | val_loss=0.8959 | val_stone_mae=0.2025 | val_stone_dom_acc=0.538 | 50s
+23:17:36 | INFO |   [frozen] epoch 5/5 | train_total=1.0628 (comp=0.9275 aux=0.4510) | val_loss=0.9000 | val_stone_mae=0.1942 | val_stone_dom_acc=0.523 | 50s
+23:17:36 | INFO | Fold 4 — Phase 2: fine-tune, 25 epochs
+23:17:36 | INFO |   Trainable params: 11,309,130
+23:18:26 | INFO |   [finetune] epoch 1/25 | train_total=1.0490 (comp=0.9167 aux=0.4410) | val_loss=0.8884 | val_stone_mae=0.1884 | val_stone_dom_acc=0.523 | 50s
+23:19:16 | INFO |   [finetune] epoch 2/25 | train_total=0.9946 (comp=0.8683 aux=0.4208) | val_loss=0.8233 | val_stone_mae=0.1846 | val_stone_dom_acc=0.569 | 50s
+23:20:07 | INFO |   [finetune] epoch 3/25 | train_total=0.9587 (comp=0.8350 aux=0.4122) | val_loss=0.8655 | val_stone_mae=0.1734 | val_stone_dom_acc=0.569 | 51s
+23:20:58 | INFO |   [finetune] epoch 4/25 | train_total=0.9576 (comp=0.8347 aux=0.4097) | val_loss=0.8629 | val_stone_mae=0.1744 | val_stone_dom_acc=0.538 | 51s
+23:21:48 | INFO |   [finetune] epoch 5/25 | train_total=0.9043 (comp=0.7841 aux=0.4007) | val_loss=0.8845 | val_stone_mae=0.1742 | val_stone_dom_acc=0.554 | 50s
+23:22:38 | INFO |   [finetune] epoch 6/25 | train_total=0.8780 (comp=0.7619 aux=0.3871) | val_loss=0.8056 | val_stone_mae=0.1710 | val_stone_dom_acc=0.569 | 50s
+23:23:28 | INFO |   [finetune] epoch 7/25 | train_total=0.8562 (comp=0.7418 aux=0.3814) | val_loss=0.8187 | val_stone_mae=0.1695 | val_stone_dom_acc=0.600 | 50s
+23:24:19 | INFO |   [finetune] epoch 8/25 | train_total=0.8410 (comp=0.7258 aux=0.3840) | val_loss=0.8430 | val_stone_mae=0.1702 | val_stone_dom_acc=0.585 | 50s
+23:25:09 | INFO |   [finetune] epoch 9/25 | train_total=0.8146 (comp=0.7011 aux=0.3786) | val_loss=0.8773 | val_stone_mae=0.1659 | val_stone_dom_acc=0.585 | 50s
+23:25:59 | INFO |   [finetune] epoch 10/25 | train_total=0.7925 (comp=0.6833 aux=0.3639) | val_loss=0.8437 | val_stone_mae=0.1650 | val_stone_dom_acc=0.585 | 50s
+23:26:50 | INFO |   [finetune] epoch 11/25 | train_total=0.7579 (comp=0.6506 aux=0.3577) | val_loss=0.8788 | val_stone_mae=0.1676 | val_stone_dom_acc=0.569 | 50s
+23:27:40 | INFO |   [finetune] epoch 12/25 | train_total=0.7740 (comp=0.6664 aux=0.3587) | val_loss=0.8521 | val_stone_mae=0.1628 | val_stone_dom_acc=0.585 | 50s
+23:28:31 | INFO |   [finetune] epoch 13/25 | train_total=0.7445 (comp=0.6392 aux=0.3511) | val_loss=0.7791 | val_stone_mae=0.1653 | val_stone_dom_acc=0.600 | 50s
+23:29:21 | INFO |   [finetune] epoch 14/25 | train_total=0.7144 (comp=0.6097 aux=0.3490) | val_loss=0.7958 | val_stone_mae=0.1576 | val_stone_dom_acc=0.600 | 50s
+23:30:11 | INFO |   [finetune] epoch 15/25 | train_total=0.7127 (comp=0.6107 aux=0.3399) | val_loss=0.8092 | val_stone_mae=0.1608 | val_stone_dom_acc=0.600 | 50s
+23:31:02 | INFO |   [finetune] epoch 16/25 | train_total=0.7077 (comp=0.6077 aux=0.3332) | val_loss=0.7465 | val_stone_mae=0.1564 | val_stone_dom_acc=0.615 | 51s
+23:31:52 | INFO |   [finetune] epoch 17/25 | train_total=0.6803 (comp=0.5809 aux=0.3314) | val_loss=0.7445 | val_stone_mae=0.1510 | val_stone_dom_acc=0.662 | 50s
+23:32:43 | INFO |   [finetune] epoch 18/25 | train_total=0.6740 (comp=0.5745 aux=0.3318) | val_loss=0.8312 | val_stone_mae=0.1546 | val_stone_dom_acc=0.600 | 50s
+23:33:33 | INFO |   [finetune] epoch 19/25 | train_total=0.6843 (comp=0.5884 aux=0.3198) | val_loss=0.7440 | val_stone_mae=0.1496 | val_stone_dom_acc=0.631 | 50s
+23:34:23 | INFO |   [finetune] epoch 20/25 | train_total=0.6773 (comp=0.5783 aux=0.3299) | val_loss=0.7279 | val_stone_mae=0.1487 | val_stone_dom_acc=0.631 | 50s
+23:35:13 | INFO |   [finetune] epoch 21/25 | train_total=0.6144 (comp=0.5201 aux=0.3143) | val_loss=0.7202 | val_stone_mae=0.1476 | val_stone_dom_acc=0.662 | 50s
+23:36:04 | INFO |   [finetune] epoch 22/25 | train_total=0.6508 (comp=0.5550 aux=0.3194) | val_loss=0.7828 | val_stone_mae=0.1497 | val_stone_dom_acc=0.600 | 50s
+23:36:54 | INFO |   [finetune] epoch 23/25 | train_total=0.6202 (comp=0.5271 aux=0.3102) | val_loss=0.7104 | val_stone_mae=0.1452 | val_stone_dom_acc=0.662 | 50s
+23:37:44 | INFO |   [finetune] epoch 24/25 | train_total=0.6024 (comp=0.5130 aux=0.2978) | val_loss=0.7657 | val_stone_mae=0.1461 | val_stone_dom_acc=0.662 | 50s
+23:38:35 | INFO |   [finetune] epoch 25/25 | train_total=0.5962 (comp=0.5057 aux=0.3016) | val_loss=0.7225 | val_stone_mae=0.1469 | val_stone_dom_acc=0.662 | 50s
+23:38:35 | INFO | Fold 4 done. best_val_loss=0.7104 | stone_mae=0.1452 | stone_dom_acc=0.662 | stone_aitchison=10.9352
+23:38:35 | INFO | Cross-fold results:
+23:38:35 | INFO |   best_stone_mae_overall: 0.1482 ± 0.0043
+23:38:35 | INFO |   best_stone_dominant_acc: 0.6860 ± 0.0463
+23:38:35 | INFO |   best_stone_aitchison: 10.9223 ± 0.2802
+23:38:35 | INFO | === Held-out test set evaluation ===
+23:38:35 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:38:52 | INFO |   Fold 0 test: stone_mae=0.1631 | stone_dom_acc=0.646 | stone_aitchison=11.2759
+23:38:52 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:39:09 | INFO |   Fold 1 test: stone_mae=0.1508 | stone_dom_acc=0.683 | stone_aitchison=11.0501
+23:39:09 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:39:26 | INFO |   Fold 2 test: stone_mae=0.1618 | stone_dom_acc=0.671 | stone_aitchison=11.2799
+23:39:26 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:39:43 | INFO |   Fold 3 test: stone_mae=0.1705 | stone_dom_acc=0.598 | stone_aitchison=11.3461
+23:39:43 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:40:00 | INFO |   Fold 4 test: stone_mae=0.1613 | stone_dom_acc=0.622 | stone_aitchison=11.0810
+23:40:00 | INFO | Test set summary (mean ± std across folds):
+23:40:00 | INFO |   stone_mae_overall: 0.1615 ± 0.0070
+23:40:00 | INFO |   stone_dominant_acc: 0.6439 ± 0.0349
+23:40:00 | INFO |   stone_aitchison: 11.2066 ± 0.1322
+23:40:04 | INFO | Device: cuda
+23:40:04 | INFO | cuDNN benchmark enabled
+23:40:06 | INFO | Skipped 21 rows with no composition data
+23:40:06 | WARNING | Skipped 2 rows whose image files are missing
+23:40:06 | INFO | Built 1240 compositional samples from 414 stones
+23:40:06 | INFO | Excluded classes ['OTH'] → 5 classes remaining, 410 stones
+23:40:06 | INFO | Test holdout: 82 stones (40 pure / 42 mixed, 246 images). Train+val pool: 328 stones (982 images).
+23:40:06 | INFO | --random-labels: stone-level composition vectors have been shuffled (baseline mode)
+23:40:06 | INFO |   Fold 0: train=262 stones (128 pure / 134 mixed, 785 images), val=66 stones (33 pure / 33 mixed, 197 images)
+23:40:06 | INFO |   Fold 1: train=262 stones (129 pure / 133 mixed, 784 images), val=66 stones (32 pure / 34 mixed, 198 images)
+23:40:06 | INFO |   Fold 2: train=262 stones (129 pure / 133 mixed, 785 images), val=66 stones (32 pure / 34 mixed, 197 images)
+23:40:06 | INFO |   Fold 3: train=263 stones (129 pure / 134 mixed, 787 images), val=65 stones (32 pure / 33 mixed, 195 images)
+23:40:06 | INFO |   Fold 4: train=263 stones (129 pure / 134 mixed, 787 images), val=65 stones (32 pure / 33 mixed, 195 images)
+23:40:06 | INFO | Model type: simple_random  |  checkpoints → /gpfs/home3/ddboer/umc_thesis/outputs/checkpoints/composition
+23:40:06 | INFO | use_weighted_kl=false — using standard (unweighted) KL divergence
+23:40:06 | INFO | === Fold 0 ===
+23:40:07 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:40:07 | INFO | Fold 0 — Phase 1: frozen backbone, 5 epochs
+23:40:07 | INFO |   Trainable params: 132,618
+23:40:57 | INFO |   [frozen] epoch 1/5 | train_total=1.3104 (comp=1.1468 aux=0.5454) | val_loss=1.0556 | val_stone_mae=0.2392 | val_stone_dom_acc=0.500 | 51s
+23:41:48 | INFO |   [frozen] epoch 2/5 | train_total=1.3006 (comp=1.1442 aux=0.5212) | val_loss=1.0191 | val_stone_mae=0.2340 | val_stone_dom_acc=0.500 | 51s
+23:42:38 | INFO |   [frozen] epoch 3/5 | train_total=1.2427 (comp=1.0899 aux=0.5091) | val_loss=1.0048 | val_stone_mae=0.2261 | val_stone_dom_acc=0.500 | 50s
+23:43:29 | INFO |   [frozen] epoch 4/5 | train_total=1.2356 (comp=1.0869 aux=0.4959) | val_loss=1.0104 | val_stone_mae=0.2270 | val_stone_dom_acc=0.485 | 50s
+23:44:19 | INFO |   [frozen] epoch 5/5 | train_total=1.2110 (comp=1.0624 aux=0.4954) | val_loss=1.0274 | val_stone_mae=0.2362 | val_stone_dom_acc=0.470 | 50s
+23:44:19 | INFO | Fold 0 — Phase 2: fine-tune, 25 epochs
+23:44:19 | INFO |   Trainable params: 11,309,130
+23:45:09 | INFO |   [finetune] epoch 1/25 | train_total=1.2315 (comp=1.0816 aux=0.4997) | val_loss=1.0261 | val_stone_mae=0.2359 | val_stone_dom_acc=0.485 | 51s
+23:46:00 | INFO |   [finetune] epoch 2/25 | train_total=1.2184 (comp=1.0711 aux=0.4912) | val_loss=1.0098 | val_stone_mae=0.2284 | val_stone_dom_acc=0.470 | 50s
+23:46:50 | INFO |   [finetune] epoch 3/25 | train_total=1.2138 (comp=1.0655 aux=0.4943) | val_loss=1.0058 | val_stone_mae=0.2274 | val_stone_dom_acc=0.470 | 50s
+23:47:41 | INFO |   [finetune] epoch 4/25 | train_total=1.2053 (comp=1.0569 aux=0.4949) | val_loss=1.0083 | val_stone_mae=0.2262 | val_stone_dom_acc=0.455 | 50s
+23:48:31 | INFO |   [finetune] epoch 5/25 | train_total=1.1731 (comp=1.0283 aux=0.4829) | val_loss=1.0112 | val_stone_mae=0.2248 | val_stone_dom_acc=0.455 | 51s
+23:49:21 | INFO |   [finetune] epoch 6/25 | train_total=1.1718 (comp=1.0266 aux=0.4839) | val_loss=1.0232 | val_stone_mae=0.2240 | val_stone_dom_acc=0.470 | 50s
+23:50:12 | INFO |   [finetune] epoch 7/25 | train_total=1.1834 (comp=1.0405 aux=0.4764) | val_loss=1.0249 | val_stone_mae=0.2300 | val_stone_dom_acc=0.470 | 50s
+23:51:02 | INFO |   [finetune] epoch 8/25 | train_total=1.1532 (comp=1.0111 aux=0.4739) | val_loss=1.0322 | val_stone_mae=0.2309 | val_stone_dom_acc=0.455 | 51s
+23:51:53 | INFO |   [finetune] epoch 9/25 | train_total=1.1748 (comp=1.0306 aux=0.4807) | val_loss=1.0461 | val_stone_mae=0.2222 | val_stone_dom_acc=0.455 | 51s
+23:52:44 | INFO |   [finetune] epoch 10/25 | train_total=1.1532 (comp=1.0098 aux=0.4780) | val_loss=1.0613 | val_stone_mae=0.2216 | val_stone_dom_acc=0.470 | 51s
+23:52:44 | INFO |   Early stopping (no improvement for 7 epochs)
+23:52:44 | INFO | Fold 0 done. best_val_loss=1.0058 | stone_mae=0.2274 | stone_dom_acc=0.470 | stone_aitchison=12.3196
+23:52:44 | INFO | === Fold 1 ===
+23:52:44 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+23:52:44 | INFO | Fold 1 — Phase 1: frozen backbone, 5 epochs
+23:52:44 | INFO |   Trainable params: 132,618
+23:53:36 | INFO |   [frozen] epoch 1/5 | train_total=1.3668 (comp=1.2025 aux=0.5475) | val_loss=1.1185 | val_stone_mae=0.2548 | val_stone_dom_acc=0.485 | 51s
+23:54:27 | INFO |   [frozen] epoch 2/5 | train_total=1.2598 (comp=1.1081 aux=0.5058) | val_loss=1.0773 | val_stone_mae=0.2360 | val_stone_dom_acc=0.500 | 51s
+23:55:17 | INFO |   [frozen] epoch 3/5 | train_total=1.2119 (comp=1.0599 aux=0.5066) | val_loss=1.0847 | val_stone_mae=0.2379 | val_stone_dom_acc=0.500 | 51s
+23:56:08 | INFO |   [frozen] epoch 4/5 | train_total=1.2160 (comp=1.0661 aux=0.4997) | val_loss=1.0873 | val_stone_mae=0.2389 | val_stone_dom_acc=0.500 | 51s
+23:56:59 | INFO |   [frozen] epoch 5/5 | train_total=1.2094 (comp=1.0588 aux=0.5017) | val_loss=1.0911 | val_stone_mae=0.2380 | val_stone_dom_acc=0.515 | 50s
+23:56:59 | INFO | Fold 1 — Phase 2: fine-tune, 25 epochs
+23:56:59 | INFO |   Trainable params: 11,309,130
+23:57:50 | INFO |   [finetune] epoch 1/25 | train_total=1.1756 (comp=1.0284 aux=0.4906) | val_loss=1.1065 | val_stone_mae=0.2311 | val_stone_dom_acc=0.500 | 51s
+23:58:40 | INFO |   [finetune] epoch 2/25 | train_total=1.1945 (comp=1.0461 aux=0.4945) | val_loss=1.1104 | val_stone_mae=0.2341 | val_stone_dom_acc=0.515 | 51s
+23:59:31 | INFO |   [finetune] epoch 3/25 | train_total=1.2057 (comp=1.0578 aux=0.4930) | val_loss=1.1058 | val_stone_mae=0.2362 | val_stone_dom_acc=0.485 | 51s
+00:00:22 | INFO |   [finetune] epoch 4/25 | train_total=1.1650 (comp=1.0185 aux=0.4884) | val_loss=1.1088 | val_stone_mae=0.2300 | val_stone_dom_acc=0.500 | 51s
+00:01:12 | INFO |   [finetune] epoch 5/25 | train_total=1.1687 (comp=1.0213 aux=0.4912) | val_loss=1.1005 | val_stone_mae=0.2391 | val_stone_dom_acc=0.500 | 51s
+00:02:03 | INFO |   [finetune] epoch 6/25 | train_total=1.1495 (comp=1.0046 aux=0.4829) | val_loss=1.1028 | val_stone_mae=0.2384 | val_stone_dom_acc=0.485 | 51s
+00:02:54 | INFO |   [finetune] epoch 7/25 | train_total=1.1564 (comp=1.0137 aux=0.4758) | val_loss=1.1260 | val_stone_mae=0.2300 | val_stone_dom_acc=0.485 | 51s
+00:03:45 | INFO |   [finetune] epoch 8/25 | train_total=1.1414 (comp=0.9993 aux=0.4737) | val_loss=1.1097 | val_stone_mae=0.2401 | val_stone_dom_acc=0.485 | 51s
+00:04:35 | INFO |   [finetune] epoch 9/25 | train_total=1.1246 (comp=0.9823 aux=0.4743) | val_loss=1.1860 | val_stone_mae=0.2237 | val_stone_dom_acc=0.470 | 51s
+00:05:26 | INFO |   [finetune] epoch 10/25 | train_total=1.1126 (comp=0.9706 aux=0.4735) | val_loss=1.1386 | val_stone_mae=0.2345 | val_stone_dom_acc=0.470 | 51s
+00:06:17 | INFO |   [finetune] epoch 11/25 | train_total=1.1244 (comp=0.9836 aux=0.4693) | val_loss=1.1416 | val_stone_mae=0.2417 | val_stone_dom_acc=0.455 | 51s
+00:07:07 | INFO |   [finetune] epoch 12/25 | train_total=1.1483 (comp=1.0045 aux=0.4795) | val_loss=1.1763 | val_stone_mae=0.2326 | val_stone_dom_acc=0.500 | 51s
+00:07:07 | INFO |   Early stopping (no improvement for 7 epochs)
+00:07:07 | INFO | Fold 1 done. best_val_loss=1.1005 | stone_mae=0.2391 | stone_dom_acc=0.500 | stone_aitchison=12.4844
+00:07:07 | INFO | === Fold 2 ===
+00:07:08 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:07:08 | INFO | Fold 2 — Phase 1: frozen backbone, 5 epochs
+00:07:08 | INFO |   Trainable params: 132,618
+00:07:57 | INFO |   [frozen] epoch 1/5 | train_total=1.3321 (comp=1.1644 aux=0.5590) | val_loss=1.1260 | val_stone_mae=0.2548 | val_stone_dom_acc=0.485 | 50s
+00:08:47 | INFO |   [frozen] epoch 2/5 | train_total=1.2411 (comp=1.0839 aux=0.5241) | val_loss=1.0823 | val_stone_mae=0.2340 | val_stone_dom_acc=0.485 | 50s
+00:09:36 | INFO |   [frozen] epoch 3/5 | train_total=1.2479 (comp=1.0934 aux=0.5149) | val_loss=1.0905 | val_stone_mae=0.2467 | val_stone_dom_acc=0.485 | 49s
+00:10:26 | INFO |   [frozen] epoch 4/5 | train_total=1.2304 (comp=1.0785 aux=0.5064) | val_loss=1.0686 | val_stone_mae=0.2368 | val_stone_dom_acc=0.485 | 49s
+00:11:15 | INFO |   [frozen] epoch 5/5 | train_total=1.2148 (comp=1.0644 aux=0.5014) | val_loss=1.0719 | val_stone_mae=0.2327 | val_stone_dom_acc=0.485 | 50s
+00:11:15 | INFO | Fold 2 — Phase 2: fine-tune, 25 epochs
+00:11:15 | INFO |   Trainable params: 11,309,130
+00:12:05 | INFO |   [finetune] epoch 1/25 | train_total=1.2234 (comp=1.0709 aux=0.5083) | val_loss=1.0711 | val_stone_mae=0.2354 | val_stone_dom_acc=0.485 | 50s
+00:12:55 | INFO |   [finetune] epoch 2/25 | train_total=1.1925 (comp=1.0436 aux=0.4962) | val_loss=1.0759 | val_stone_mae=0.2425 | val_stone_dom_acc=0.515 | 50s
+00:13:45 | INFO |   [finetune] epoch 3/25 | train_total=1.1988 (comp=1.0513 aux=0.4914) | val_loss=1.0731 | val_stone_mae=0.2323 | val_stone_dom_acc=0.485 | 50s
+00:14:35 | INFO |   [finetune] epoch 4/25 | train_total=1.1805 (comp=1.0336 aux=0.4896) | val_loss=1.0740 | val_stone_mae=0.2419 | val_stone_dom_acc=0.515 | 50s
+00:15:25 | INFO |   [finetune] epoch 5/25 | train_total=1.1752 (comp=1.0277 aux=0.4915) | val_loss=1.0708 | val_stone_mae=0.2357 | val_stone_dom_acc=0.515 | 50s
+00:16:15 | INFO |   [finetune] epoch 6/25 | train_total=1.1763 (comp=1.0301 aux=0.4873) | val_loss=1.0776 | val_stone_mae=0.2319 | val_stone_dom_acc=0.485 | 50s
+00:17:05 | INFO |   [finetune] epoch 7/25 | train_total=1.1650 (comp=1.0186 aux=0.4882) | val_loss=1.0720 | val_stone_mae=0.2357 | val_stone_dom_acc=0.530 | 50s
+00:17:55 | INFO |   [finetune] epoch 8/25 | train_total=1.1647 (comp=1.0186 aux=0.4871) | val_loss=1.0748 | val_stone_mae=0.2419 | val_stone_dom_acc=0.515 | 50s
+00:18:44 | INFO |   [finetune] epoch 9/25 | train_total=1.1529 (comp=1.0086 aux=0.4809) | val_loss=1.0711 | val_stone_mae=0.2370 | val_stone_dom_acc=0.530 | 50s
+00:19:34 | INFO |   [finetune] epoch 10/25 | train_total=1.1408 (comp=0.9969 aux=0.4797) | val_loss=1.0677 | val_stone_mae=0.2330 | val_stone_dom_acc=0.515 | 49s
+00:20:23 | INFO |   [finetune] epoch 11/25 | train_total=1.1451 (comp=1.0021 aux=0.4767) | val_loss=1.0758 | val_stone_mae=0.2259 | val_stone_dom_acc=0.515 | 50s
+00:21:13 | INFO |   [finetune] epoch 12/25 | train_total=1.1297 (comp=0.9862 aux=0.4782) | val_loss=1.0704 | val_stone_mae=0.2303 | val_stone_dom_acc=0.545 | 50s
+00:22:02 | INFO |   [finetune] epoch 13/25 | train_total=1.1469 (comp=1.0046 aux=0.4742) | val_loss=1.0810 | val_stone_mae=0.2441 | val_stone_dom_acc=0.545 | 50s
+00:22:52 | INFO |   [finetune] epoch 14/25 | train_total=1.1171 (comp=0.9769 aux=0.4673) | val_loss=1.0743 | val_stone_mae=0.2334 | val_stone_dom_acc=0.500 | 50s
+00:23:42 | INFO |   [finetune] epoch 15/25 | train_total=1.1175 (comp=0.9758 aux=0.4726) | val_loss=1.0840 | val_stone_mae=0.2352 | val_stone_dom_acc=0.530 | 49s
+00:24:31 | INFO |   [finetune] epoch 16/25 | train_total=1.1100 (comp=0.9686 aux=0.4712) | val_loss=1.0683 | val_stone_mae=0.2351 | val_stone_dom_acc=0.545 | 49s
+00:25:21 | INFO |   [finetune] epoch 17/25 | train_total=1.0944 (comp=0.9542 aux=0.4672) | val_loss=1.0809 | val_stone_mae=0.2314 | val_stone_dom_acc=0.545 | 50s
+00:25:21 | INFO |   Early stopping (no improvement for 7 epochs)
+00:25:21 | INFO | Fold 2 done. best_val_loss=1.0677 | stone_mae=0.2330 | stone_dom_acc=0.515 | stone_aitchison=12.2126
+00:25:21 | INFO | === Fold 3 ===
+00:25:21 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:25:21 | INFO | Fold 3 — Phase 1: frozen backbone, 5 epochs
+00:25:21 | INFO |   Trainable params: 132,618
+00:26:11 | INFO |   [frozen] epoch 1/5 | train_total=1.3197 (comp=1.1541 aux=0.5521) | val_loss=1.0739 | val_stone_mae=0.2486 | val_stone_dom_acc=0.462 | 50s
+00:27:01 | INFO |   [frozen] epoch 2/5 | train_total=1.2635 (comp=1.1094 aux=0.5138) | val_loss=1.0297 | val_stone_mae=0.2335 | val_stone_dom_acc=0.538 | 50s
+00:27:50 | INFO |   [frozen] epoch 3/5 | train_total=1.2359 (comp=1.0826 aux=0.5108) | val_loss=1.0303 | val_stone_mae=0.2351 | val_stone_dom_acc=0.538 | 49s
+00:28:39 | INFO |   [frozen] epoch 4/5 | train_total=1.2289 (comp=1.0782 aux=0.5022) | val_loss=1.0381 | val_stone_mae=0.2322 | val_stone_dom_acc=0.554 | 49s
+00:29:28 | INFO |   [frozen] epoch 5/5 | train_total=1.1947 (comp=1.0452 aux=0.4985) | val_loss=1.0361 | val_stone_mae=0.2281 | val_stone_dom_acc=0.538 | 49s
+00:29:28 | INFO | Fold 3 — Phase 2: fine-tune, 25 epochs
+00:29:28 | INFO |   Trainable params: 11,309,130
+00:30:17 | INFO |   [finetune] epoch 1/25 | train_total=1.2171 (comp=1.0668 aux=0.5010) | val_loss=1.0366 | val_stone_mae=0.2281 | val_stone_dom_acc=0.523 | 49s
+00:31:07 | INFO |   [finetune] epoch 2/25 | train_total=1.1959 (comp=1.0480 aux=0.4930) | val_loss=1.0444 | val_stone_mae=0.2277 | val_stone_dom_acc=0.554 | 50s
+00:31:57 | INFO |   [finetune] epoch 3/25 | train_total=1.1737 (comp=1.0285 aux=0.4840) | val_loss=1.0631 | val_stone_mae=0.2354 | val_stone_dom_acc=0.477 | 50s
+00:32:46 | INFO |   [finetune] epoch 4/25 | train_total=1.1877 (comp=1.0407 aux=0.4897) | val_loss=1.0824 | val_stone_mae=0.2345 | val_stone_dom_acc=0.385 | 49s
+00:33:36 | INFO |   [finetune] epoch 5/25 | train_total=1.1718 (comp=1.0270 aux=0.4826) | val_loss=1.0707 | val_stone_mae=0.2363 | val_stone_dom_acc=0.492 | 50s
+00:34:26 | INFO |   [finetune] epoch 6/25 | train_total=1.1592 (comp=1.0146 aux=0.4819) | val_loss=1.0670 | val_stone_mae=0.2283 | val_stone_dom_acc=0.538 | 50s
+00:35:15 | INFO |   [finetune] epoch 7/25 | train_total=1.1527 (comp=1.0082 aux=0.4814) | val_loss=1.0728 | val_stone_mae=0.2259 | val_stone_dom_acc=0.508 | 50s
+00:36:05 | INFO |   [finetune] epoch 8/25 | train_total=1.1615 (comp=1.0160 aux=0.4850) | val_loss=1.0757 | val_stone_mae=0.2282 | val_stone_dom_acc=0.538 | 50s
+00:36:05 | INFO |   Early stopping (no improvement for 7 epochs)
+00:36:05 | INFO | Fold 3 done. best_val_loss=1.0366 | stone_mae=0.2281 | stone_dom_acc=0.523 | stone_aitchison=12.3930
+00:36:05 | INFO | === Fold 4 ===
+00:36:05 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:36:05 | INFO | Fold 4 — Phase 1: frozen backbone, 5 epochs
+00:36:05 | INFO |   Trainable params: 132,618
+00:36:56 | INFO |   [frozen] epoch 1/5 | train_total=1.3253 (comp=1.1618 aux=0.5449) | val_loss=1.1740 | val_stone_mae=0.2605 | val_stone_dom_acc=0.492 | 51s
+00:37:47 | INFO |   [frozen] epoch 2/5 | train_total=1.2704 (comp=1.1163 aux=0.5136) | val_loss=1.1031 | val_stone_mae=0.2410 | val_stone_dom_acc=0.492 | 50s
+00:38:37 | INFO |   [frozen] epoch 3/5 | train_total=1.2312 (comp=1.0795 aux=0.5056) | val_loss=1.0813 | val_stone_mae=0.2405 | val_stone_dom_acc=0.508 | 50s
+00:39:28 | INFO |   [frozen] epoch 4/5 | train_total=1.2215 (comp=1.0719 aux=0.4985) | val_loss=1.0935 | val_stone_mae=0.2455 | val_stone_dom_acc=0.492 | 50s
+00:40:18 | INFO |   [frozen] epoch 5/5 | train_total=1.2072 (comp=1.0577 aux=0.4983) | val_loss=1.0902 | val_stone_mae=0.2351 | val_stone_dom_acc=0.492 | 50s
+00:40:18 | INFO | Fold 4 — Phase 2: fine-tune, 25 epochs
+00:40:18 | INFO |   Trainable params: 11,309,130
+00:41:08 | INFO |   [finetune] epoch 1/25 | train_total=1.2086 (comp=1.0587 aux=0.4999) | val_loss=1.0881 | val_stone_mae=0.2341 | val_stone_dom_acc=0.492 | 50s
+00:41:59 | INFO |   [finetune] epoch 2/25 | train_total=1.2115 (comp=1.0609 aux=0.5020) | val_loss=1.0890 | val_stone_mae=0.2372 | val_stone_dom_acc=0.492 | 50s
+00:42:49 | INFO |   [finetune] epoch 3/25 | train_total=1.1928 (comp=1.0447 aux=0.4938) | val_loss=1.0990 | val_stone_mae=0.2436 | val_stone_dom_acc=0.477 | 50s
+00:43:39 | INFO |   [finetune] epoch 4/25 | train_total=1.1911 (comp=1.0421 aux=0.4968) | val_loss=1.1187 | val_stone_mae=0.2291 | val_stone_dom_acc=0.492 | 50s
+00:44:30 | INFO |   [finetune] epoch 5/25 | train_total=1.1781 (comp=1.0305 aux=0.4920) | val_loss=1.0994 | val_stone_mae=0.2347 | val_stone_dom_acc=0.492 | 50s
+00:45:20 | INFO |   [finetune] epoch 6/25 | train_total=1.1838 (comp=1.0371 aux=0.4891) | val_loss=1.1082 | val_stone_mae=0.2380 | val_stone_dom_acc=0.492 | 50s
+00:46:10 | INFO |   [finetune] epoch 7/25 | train_total=1.1599 (comp=1.0139 aux=0.4864) | val_loss=1.1061 | val_stone_mae=0.2448 | val_stone_dom_acc=0.508 | 50s
+00:47:01 | INFO |   [finetune] epoch 8/25 | train_total=1.1628 (comp=1.0176 aux=0.4842) | val_loss=1.1076 | val_stone_mae=0.2324 | val_stone_dom_acc=0.477 | 50s
+00:47:01 | INFO |   Early stopping (no improvement for 7 epochs)
+00:47:01 | INFO | Fold 4 done. best_val_loss=1.0881 | stone_mae=0.2341 | stone_dom_acc=0.492 | stone_aitchison=12.0807
+00:47:01 | INFO | Cross-fold results:
+00:47:01 | INFO |   best_stone_mae_overall: 0.2323 ± 0.0048
+00:47:01 | INFO |   best_stone_dominant_acc: 0.5000 ± 0.0209
+00:47:01 | INFO |   best_stone_aitchison: 12.2981 ± 0.1571
+00:47:01 | INFO | === Held-out test set evaluation ===
+00:47:01 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:47:18 | INFO |   Fold 0 test: stone_mae=0.2357 | stone_dom_acc=0.476 | stone_aitchison=12.5247
+00:47:18 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:47:35 | INFO |   Fold 1 test: stone_mae=0.2400 | stone_dom_acc=0.476 | stone_aitchison=12.5672
+00:47:35 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:47:52 | INFO |   Fold 2 test: stone_mae=0.2360 | stone_dom_acc=0.463 | stone_aitchison=12.4811
+00:47:52 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:48:08 | INFO |   Fold 3 test: stone_mae=0.2348 | stone_dom_acc=0.476 | stone_aitchison=12.4738
+00:48:09 | INFO | Built SimpleCompositionModel: resnet18 backbone + single shared head + presence detection head (11,309,130 params total)
+00:48:25 | INFO |   Fold 4 test: stone_mae=0.2298 | stone_dom_acc=0.488 | stone_aitchison=12.3757
+00:48:25 | INFO | Test set summary (mean ± std across folds):
+00:48:25 | INFO |   stone_mae_overall: 0.2353 ± 0.0036
+00:48:25 | INFO |   stone_dominant_acc: 0.4756 ± 0.0086
+00:48:25 | INFO |   stone_aitchison: 12.4845 ± 0.0715
