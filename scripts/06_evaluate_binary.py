@@ -207,7 +207,7 @@ def plot_confusion_matrix(
     ax.set_yticklabels(class_names, fontsize=11)
     ax.set_xlabel("Predicted label", fontsize=12)
     ax.set_ylabel("True label", fontsize=12)
-    ax.set_title(title, fontsize=12)
+    ax.set_title(title, fontsize=9)
 
     thresh = cm.max() / 2.0
     for i in range(cm.shape[0]):
