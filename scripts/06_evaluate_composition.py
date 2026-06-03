@@ -795,9 +795,11 @@ def main() -> None:
 
         pred_cols = [f"pred_{c}" for c in final_classes]
         true_cols = [f"true_{c}" for c in final_classes]
+        pres_cols = [f"pres_{c}" for c in final_classes]
         all_test = pd.concat(test_stone_dfs, ignore_index=True)
-        test_agg = all_test.groupby("stone_id")[["label"] + pred_cols + true_cols].agg(
-            {**{"label": "first"}, **{c: "mean" for c in pred_cols + true_cols}}
+        agg_cols = ["label"] + pred_cols + true_cols + pres_cols
+        test_agg = all_test.groupby("stone_id")[agg_cols].agg(
+            {**{"label": "first"}, **{c: "mean" for c in pred_cols + true_cols + pres_cols}}
         ).reset_index()
         pred_sum = test_agg[pred_cols].sum(axis=1)
         test_agg[pred_cols] = test_agg[pred_cols].div(pred_sum, axis=0)
@@ -834,6 +836,21 @@ def main() -> None:
             plot_mae_bars(test_summary, final_classes,
                           figures_dir / f"{p}_mae_bars_test.png",
                           title=f"Per-class MAE — stone level (held-out test set) [{p}]{title_tag}")
+
+        # Presence-head masked MAE: zero out components where pres_prob < 0.5, renormalize
+        pred_arr  = test_agg[pred_cols].values.copy()
+        pres_arr  = test_agg[pres_cols].values
+        true_arr2 = test_agg[true_cols].values
+        mask = pres_arr >= 0.5
+        pred_masked = pred_arr * mask
+        row_sums = pred_masked.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1.0          # avoid div-by-zero for all-zero rows
+        pred_masked = pred_masked / row_sums
+        mae_raw    = float(np.abs(pred_arr  - true_arr2).mean())
+        mae_masked = float(np.abs(pred_masked - true_arr2).mean())
+        log.info(f"Post-processing MAE comparison (test set):")
+        log.info(f"  Raw softmax output:          MAE = {mae_raw:.4f}")
+        log.info(f"  Presence-head masked (≥0.5): MAE = {mae_masked:.4f}  (Δ={mae_masked-mae_raw:+.4f})")
 
         plot_composition_scatter(test_agg, final_classes,
                                  figures_dir / f"{p}_composition_scatter_test.png",
