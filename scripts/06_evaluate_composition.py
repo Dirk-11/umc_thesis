@@ -479,6 +479,39 @@ def plot_composition_scatter(
     log.info(f"Saved: {output_path}")
 
 
+def plot_composition_scatter_combined(
+    stone_df: pd.DataFrame,
+    class_names: list[str],
+    output_path: Path,
+    title: str = "Predicted vs true composition — all classes",
+) -> None:
+    """Single scatter with all classes overlaid, colored by class."""
+    from scipy.stats import spearmanr
+
+    colors = ["#2166AC", "#D6604D", "#4DAF4A", "#FF7F00", "#984EA3", "#A65628"]
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    for cls, color in zip(class_names, colors):
+        true_vals = stone_df[f"true_{cls}"].values
+        pred_vals = stone_df[f"pred_{cls}"].values
+        mae = float(np.abs(pred_vals - true_vals).mean())
+        rho = spearmanr(true_vals, pred_vals).statistic if len(true_vals) > 2 else float("nan")
+        ax.scatter(true_vals, pred_vals, alpha=0.4, s=15, color=color,
+                   label=f"{cls}  MAE={mae:.3f}  ρ={rho:.2f}")
+
+    ax.plot([0, 1], [0, 1], "k--", lw=1)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("True fraction", fontsize=11)
+    ax.set_ylabel("Predicted fraction", fontsize=11)
+    ax.set_title(title, fontsize=12)
+    ax.legend(fontsize=8, framealpha=0.9, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    log.info(f"Saved: {output_path}")
+
+
 def plot_primary_confusion(
     stone_df: pd.DataFrame,
     class_names: list[str],
@@ -717,6 +750,9 @@ def main() -> None:
     plot_composition_scatter(all_stones, final_classes,
                              figures_dir / f"{p}_composition_scatter.png",
                              title=f"Predicted vs true composition — stone level{title_tag}")
+    plot_composition_scatter_combined(all_stones, final_classes,
+                             figures_dir / f"{p}_composition_scatter_combined.png",
+                             title=f"Predicted vs true composition — all classes{title_tag}")
     plot_primary_confusion(all_stones, final_classes,
                            figures_dir / f"{p}_primary_confusion.png",
                            title=f"Primary component — predicted vs true (stone level){title_tag}")
@@ -786,6 +822,9 @@ def main() -> None:
         plot_composition_scatter(test_agg, final_classes,
                                  figures_dir / f"{p}_composition_scatter_test.png",
                                  title=f"Predicted vs true composition — held-out test set [{p}]{title_tag}")
+        plot_composition_scatter_combined(test_agg, final_classes,
+                                 figures_dir / f"{p}_composition_scatter_combined_test.png",
+                                 title=f"Predicted vs true composition — all classes, held-out test set [{p}]{title_tag}")
         plot_primary_confusion(test_agg, final_classes,
                                figures_dir / f"{p}_primary_confusion_test.png",
                                title=f"Primary component — predicted vs true (held-out test set) [{p}]{title_tag}")
