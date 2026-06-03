@@ -491,7 +491,7 @@ def plot_composition_error_violin(
     colors = ["#2166AC", "#D6604D", "#4DAF4A", "#FF7F00", "#984EA3", "#A65628"]
 
     errors = []
-    labels = []
+    stats = []
     for cls in class_names:
         true_vals = stone_df[f"true_{cls}"].values
         pred_vals = stone_df[f"pred_{cls}"].values
@@ -499,9 +499,9 @@ def plot_composition_error_violin(
         errors.append(err)
         mae = float(np.abs(err).mean())
         rho = spearmanr(true_vals, pred_vals).statistic if len(true_vals) > 2 else float("nan")
-        labels.append(f"{cls}\n(MAE={mae:.3f}, ρ={rho:.2f})")
+        stats.append((mae, rho))
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(8, 5))
     parts = ax.violinplot(errors, positions=range(len(class_names)),
                           showmedians=True, showextrema=True)
 
@@ -512,9 +512,13 @@ def plot_composition_error_violin(
         parts[part].set_color("black")
         parts[part].set_linewidth(1)
 
+    for i, (mae, rho) in enumerate(stats):
+        ax.text(i, 0.88, f"MAE={mae:.3f}\nρ={rho:.2f}",
+                ha="center", va="top", fontsize=8, transform=ax.get_xaxis_transform())
+
     ax.axhline(0, color="black", linestyle="--", lw=1)
     ax.set_xticks(range(len(class_names)))
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(class_names, fontsize=11)
     ax.set_ylabel("Predicted − True", fontsize=11)
     ax.set_title(title, fontsize=12)
     ax.set_ylim(-1, 1)
