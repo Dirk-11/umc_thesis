@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=9
 #SBATCH --gpus=1
 #SBATCH --mem=32G
-#SBATCH --time=04:00:00
+#SBATCH --time=08:00:00
 #SBATCH --output=outputs/logs/binary_%j.out
 #SBATCH --error=outputs/logs/binary_%j.err
 #SBATCH --mail-type=END,FAIL
