@@ -486,15 +486,20 @@ def plot_composition_error_violin(
     title: str = "Prediction error per class — stone level",
 ) -> None:
     """Violin plot of (predicted − true) per class, centered at 0."""
+    from scipy.stats import spearmanr
+
     colors = ["#2166AC", "#D6604D", "#4DAF4A", "#FF7F00", "#984EA3", "#A65628"]
 
     errors = []
     labels = []
     for cls in class_names:
-        err = stone_df[f"pred_{cls}"].values - stone_df[f"true_{cls}"].values
+        true_vals = stone_df[f"true_{cls}"].values
+        pred_vals = stone_df[f"pred_{cls}"].values
+        err = pred_vals - true_vals
         errors.append(err)
         mae = float(np.abs(err).mean())
-        labels.append(f"{cls}\n(MAE={mae:.3f})")
+        rho = spearmanr(true_vals, pred_vals).statistic if len(true_vals) > 2 else float("nan")
+        labels.append(f"{cls}\n(MAE={mae:.3f}, ρ={rho:.2f})")
 
     fig, ax = plt.subplots(figsize=(7, 4))
     parts = ax.violinplot(errors, positions=range(len(class_names)),
