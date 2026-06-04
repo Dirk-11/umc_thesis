@@ -235,7 +235,16 @@ def train_one_fold(
     val_loader = ds.make_dataloader(samples, val_idx, cfg, train=False)
 
     model = model_module.build_model(cfg).to(device)
-    criterion = nn.CrossEntropyLoss()
+
+    # Inverse-frequency class weights computed from this fold's training labels
+    train_labels = [samples[i].label for i in train_idx]
+    n_pure  = sum(1 for l in train_labels if l == 0)
+    n_mixed = sum(1 for l in train_labels if l == 1)
+    w_pure  = (n_pure + n_mixed) / (2 * n_pure)  if n_pure  > 0 else 1.0
+    w_mixed = (n_pure + n_mixed) / (2 * n_mixed) if n_mixed > 0 else 1.0
+    class_weights = torch.tensor([w_pure, w_mixed], dtype=torch.float32, device=device)
+    log.info(f"Fold {fold_i} class weights — pure: {w_pure:.3f}  mixed: {w_mixed:.3f}")
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
     tcfg = cfg["training"]
     epochs_frozen = 2 if quick else tcfg["epochs_frozen"]
