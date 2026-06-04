@@ -1,0 +1,8 @@
+21:01:42 | INFO | Run '100% purity' (suffix=''): 331 stones, 5 fold(s)
+21:01:42 | INFO |   AUC = 0.750 ± 0.026
+21:01:42 | INFO | Run '90% purity' (suffix='_t90'): 331 stones, 5 fold(s)
+21:01:42 | INFO |   AUC = 0.719 ± 0.110
+21:01:42 | INFO | Run 'Random' (suffix='_random'): 331 stones, 5 fold(s)
+21:01:42 | INFO |   AUC = 0.490 ± 0.080
+21:01:42 | INFO | Saved: /gpfs/home3/ddboer/umc_thesis/outputs/figures/roc_comparison.png
+21:01:42 | INFO | Done.
